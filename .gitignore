@@ -1,34 +1,71 @@
+# ==========================
 # Datasets
-datasets/
+# ==========================
 
-# Python cache
+# Ignore dataset files
+datasets/FI2010/*.csv
+
+# Keep folder structure
+!datasets/
+!datasets/FI2010/
+!datasets/FI2010/README.md
+!datasets/FinancialPhraseBank-v1.0/
+
+# ==========================
+# Python Cache
+# ==========================
+
 __pycache__/
 *.pyc
 
-# Jupyter checkpoints
+# ==========================
+# Jupyter
+# ==========================
+
 .ipynb_checkpoints/
 
-# Virtual environment
+# ==========================
+# Virtual Environment
+# ==========================
+
 venv/
 .venv/
 env/
 
-# Model checkpoints
+# ==========================
+# Model Checkpoints
+# ==========================
+
 checkpoints/
 saved_models/
 
+# ==========================
 # Outputs
+# ==========================
+
 outputs/
 
-# Reports (optional)
+# ==========================
+# Reports
+# ==========================
+
 reports/
 
-# OS files
+# ==========================
+# Operating System Files
+# ==========================
+
 .DS_Store
 Thumbs.db
 
+# ==========================
 # VS Code
+# ==========================
+
 .vscode/
 
-# Environment variables
+# ==========================
+# Environment Variables
+# ==========================
+
 .env
