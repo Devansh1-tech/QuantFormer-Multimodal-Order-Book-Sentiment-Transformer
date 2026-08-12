@@ -1,0 +1,13 @@
+{
+    "target_column": "148",
+    "target_mapping": {
+        "1": 0,
+        "2": 1,
+        "3": 2
+    },
+    "constant_feature_removed": "143",
+    "num_features": 143,
+    "sequence_length": 100,
+    "train_ratio": 0.85,
+    "scaler": "StandardScaler"
+}
