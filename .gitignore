@@ -1,7 +1,3 @@
-# ==========================
-# Datasets
-# ==========================
-
 # Ignore dataset files
 datasets/FI2010/*.csv
 
@@ -10,10 +6,6 @@ datasets/FI2010/*.csv
 !datasets/FI2010/
 !datasets/FI2010/README.md
 !datasets/FinancialPhraseBank-v1.0/
-
-# ==========================
-# Python Cache
-# ==========================
 
 __pycache__/
 *.pyc
