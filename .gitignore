@@ -1,11 +1,22 @@
-# Ignore dataset files
+# ==========================
+# Datasets
+# ==========================
+
+# Ignore raw FI-2010 CSV files
 datasets/FI2010/*.csv
 
-# Keep folder structure
+# Ignore all processed datasets
+datasets/processed/
+
+# Keep dataset folder structure
 !datasets/
 !datasets/FI2010/
 !datasets/FI2010/README.md
 !datasets/FinancialPhraseBank-v1.0/
+
+# ==========================
+# Python
+# ==========================
 
 __pycache__/
 *.pyc
@@ -61,3 +72,6 @@ Thumbs.db
 # ==========================
 
 .env
+
+# Preprocessing artifacts
+artifacts/
