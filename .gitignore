@@ -75,3 +75,6 @@ Thumbs.db
 
 # Preprocessing artifacts
 artifacts/
+# TFT generated model and evaluation output
+*.pth
+notebooks/tft_test_results.csv
