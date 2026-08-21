@@ -1,19 +1,7 @@
-"""
-===========================================================
-Training Pipeline
-
-Project : QuantFormer
-
-Contains the training and validation loops
-for the Temporal Fusion Transformer.
-
-Author : Team QuantFormer
-===========================================================
-"""
-
+import copy
 import torch
-from tqdm.auto import tqdm
 
+from tqdm.auto import tqdm
 from sklearn.metrics import accuracy_score
 
 
@@ -27,8 +15,9 @@ DEVICE = torch.device(
 
 print(f"Using Device : {DEVICE}")
 
+
 # ==========================================================
-# Training Function
+# Train One Epoch
 # ==========================================================
 
 def train_one_epoch(
@@ -38,7 +27,7 @@ def train_one_epoch(
     criterion
 ):
     """
-    Train model for one epoch.
+    Train QuantFormer for one epoch.
     """
 
     model.train()
@@ -102,8 +91,9 @@ def train_one_epoch(
 
     return epoch_loss, epoch_accuracy
 
+
 # ==========================================================
-# Validation Function
+# Validation One Epoch
 # ==========================================================
 
 @torch.no_grad()
@@ -114,7 +104,7 @@ def validate_one_epoch(
     criterion
 ):
     """
-    Validation loop.
+    Validate QuantFormer for one epoch.
     """
 
     model.eval()
@@ -177,12 +167,10 @@ def validate_one_epoch(
         labels
     )
 
+
 # ==========================================================
 # Complete Training Pipeline
 # ==========================================================
-
-import copy
-
 
 def train_model(
     model,
@@ -201,14 +189,22 @@ def train_model(
     model = model.to(DEVICE)
 
     history = {
+
         "train_loss": [],
+
         "train_accuracy": [],
+
         "val_loss": [],
-        "val_accuracy": []
+
+        "val_accuracy": [],
+
+        "learning_rate": []
+
     }
 
     best_accuracy = 0.0
-    best_model = None
+
+    best_checkpoint = None
 
     for epoch in range(epochs):
 
@@ -216,52 +212,108 @@ def train_model(
         print(f"Epoch {epoch + 1}/{epochs}")
         print("=" * 70)
 
+        # ------------------------------
+        # Training
+        # ------------------------------
+
         train_loss, train_acc = train_one_epoch(
+
             model,
+
             train_loader,
+
             optimizer,
+
             criterion
+
         )
+
+        # ------------------------------
+        # Validation
+        # ------------------------------
 
         val_loss, val_acc, predictions, labels = validate_one_epoch(
+
             model,
+
             val_loader,
+
             criterion
+
         )
 
-        scheduler.step()
+        # ------------------------------
+        # Scheduler
+        # ------------------------------
+
+        scheduler.step(val_loss)
+
+        current_lr = optimizer.param_groups[0]["lr"]
+
+        # ------------------------------
+        # History
+        # ------------------------------
 
         history["train_loss"].append(train_loss)
+
         history["train_accuracy"].append(train_acc)
+
         history["val_loss"].append(val_loss)
+
         history["val_accuracy"].append(val_acc)
 
-        print(f"Train Loss     : {train_loss:.4f}")
-        print(f"Train Accuracy : {train_acc:.4f}")
-        print(f"Valid Loss     : {val_loss:.4f}")
-        print(f"Valid Accuracy : {val_acc:.4f}")
+        history["learning_rate"].append(current_lr)
+
+        # ------------------------------
+        # Print Metrics
+        # ------------------------------
+
+        print(f"Train Loss       : {train_loss:.4f}")
+        print(f"Train Accuracy   : {train_acc:.4f}")
+        print(f"Validation Loss  : {val_loss:.4f}")
+        print(f"Validation Acc   : {val_acc:.4f}")
+        print(f"Learning Rate    : {current_lr:.6f}")
+
+        # ------------------------------
+        # Save Best Model
+        # ------------------------------
 
         if val_acc > best_accuracy:
 
             best_accuracy = val_acc
 
-            best_model = copy.deepcopy(
-                model.state_dict()
-            )
+            best_checkpoint = {
+
+                "epoch": epoch + 1,
+
+                "model_state_dict": copy.deepcopy(
+                    model.state_dict()
+                ),
+
+                "optimizer_state_dict": optimizer.state_dict(),
+
+                "best_validation_accuracy": best_accuracy
+
+            }
 
             torch.save(
-                best_model,
+
+                best_checkpoint,
+
                 save_path
+
             )
 
-            print("✅ Best model saved.")
+            print("Best model checkpoint saved.")
 
         print()
 
     print("=" * 70)
-    print("Training Finished")
-    print(f"Best Validation Accuracy : {best_accuracy:.4f}")
+    print("Training Completed")
     print("=" * 70)
 
-    return history
+    print(f"Best Validation Accuracy : {best_accuracy:.4f}")
 
+    print("=" * 70)
+
+    return history, best_accuracy
