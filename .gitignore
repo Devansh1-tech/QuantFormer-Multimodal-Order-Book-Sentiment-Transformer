@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ============================================================
 # QuantFormer - .gitignore
 # ============================================================
@@ -8,11 +9,19 @@
 # ============================================================
 
 # Ignore all raw FI-2010 CSV files
+=======
+# ==========================
+# Datasets
+# ==========================
+
+# Ignore raw FI-2010 CSV files
+>>>>>>> main
 datasets/FI2010/*.csv
 
 # Ignore all processed datasets
 datasets/processed/
 
+<<<<<<< HEAD
 # Ignore processed FI-2010 data
 datasets/processed/fi2010/
 
@@ -26,16 +35,27 @@ datasets/**/*.npy
 datasets/**/*.npz
 datasets/**/*.pkl
 
+=======
+>>>>>>> main
 # Keep dataset folder structure
 !datasets/
 !datasets/FI2010/
 !datasets/FI2010/README.md
 !datasets/FinancialPhraseBank-v1.0/
 
+<<<<<<< HEAD
 # Keep processed directories if they are empty
 !datasets/processed/
 !datasets/processed/fi2010/
 !datasets/processed/phrasebank/
+=======
+# ==========================
+# Python
+# ==========================
+
+__pycache__/
+*.pyc
+>>>>>>> main
 
 
 # ============================================================
@@ -135,6 +155,7 @@ desktop.ini
 .vscode/
 
 
+<<<<<<< HEAD
 # ============================================================
 # ENVIRONMENT VARIABLES / SECRETS
 # ============================================================
@@ -169,3 +190,12 @@ desktop.ini
 
 # ============================================================
 # OS / IDE
+=======
+.env
+
+# Preprocessing artifacts
+artifacts/
+# TFT generated model and evaluation output
+*.pth
+notebooks/tft_test_results.csv
+>>>>>>> main
