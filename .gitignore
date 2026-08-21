@@ -1,80 +1,21 @@
-# ==========================
-# Datasets
-# ==========================
+datasets/
 
-# Ignore raw FI-2010 CSV files
-datasets/FI2010/*.csv
-
-# Ignore all processed datasets
-datasets/processed/
-
-# Keep dataset folder structure
-!datasets/
-!datasets/FI2010/
-!datasets/FI2010/README.md
-!datasets/FinancialPhraseBank-v1.0/
-
-# ==========================
-# Python
-# ==========================
+saved_models/best_finbert_model.pth
 
 __pycache__/
-*.pyc
+*.py[cod]
 
-# ==========================
-# Jupyter
-# ==========================
 
 .ipynb_checkpoints/
 
-# ==========================
-# Virtual Environment
-# ==========================
 
 venv/
 .venv/
 env/
 
-# ==========================
-# Model Checkpoints
-# ==========================
-
-checkpoints/
-saved_models/
-
-# ==========================
-# Outputs
-# ==========================
-
-outputs/
-
-# ==========================
-# Reports
-# ==========================
-
-reports/
-
-# ==========================
-# Operating System Files
-# ==========================
-
-.DS_Store
-Thumbs.db
-
-# ==========================
-# VS Code
-# ==========================
+.env
 
 .vscode/
 
-# ==========================
-# Environment Variables
-# ==========================
-
-.env
-
-# Preprocessing artifacts
-artifacts/
-# TFT generated model and evaluation output
-*.pth
-notebooks/tft_test_results.csv
+.DS_Store
+Thumbs.db
