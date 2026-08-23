@@ -13,6 +13,9 @@ datasets/processed/
 !datasets/FI2010/
 !datasets/FI2010/README.md
 !datasets/FinancialPhraseBank-v1.0/
+datasets/
+
+saved_models/best_finbert_model.pth
 
 # ==================================================
 # Python
@@ -31,6 +34,10 @@ __pycache__/
 # ==================================================
 # Virtual Environment
 # ==================================================
+
+
+.ipynb_checkpoints/
+
 
 venv/
 .venv/
@@ -108,3 +115,9 @@ Thumbs.db
 
 *.tmp
 *.temp
+.env
+
+.vscode/
+
+.DS_Store
+Thumbs.db
