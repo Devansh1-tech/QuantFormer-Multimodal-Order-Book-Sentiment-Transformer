@@ -18,7 +18,7 @@ from src.models.attention import (
     InterpretableMultiHeadAttention
 )
 
-from src.config import (
+from src.project_config import (
     NUM_FEATURES,
     HIDDEN_SIZE,
     LSTM_LAYERS,
@@ -230,9 +230,8 @@ class TemporalFusionTransformer(nn.Module):
 
         pooled_features = fused_features.mean(dim=1)
 
-
         logits = self.classifier(
             pooled_features
         )
 
-        return logits, attention_weights
+        return logits, pooled_features, attention_weights

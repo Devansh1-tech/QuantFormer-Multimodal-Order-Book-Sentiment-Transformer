@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from src.config import (
+from src.project_config import (
     HIDDEN_SIZE,
     DROPOUT
 )

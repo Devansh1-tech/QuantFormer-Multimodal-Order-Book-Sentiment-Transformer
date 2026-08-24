@@ -15,7 +15,7 @@ import torch
 
 from torch.utils.data import Dataset, DataLoader
 
-from src.config import (
+from src.project_config import (
     X_TRAIN_PATH,
     Y_TRAIN_PATH,
     X_VAL_PATH,
