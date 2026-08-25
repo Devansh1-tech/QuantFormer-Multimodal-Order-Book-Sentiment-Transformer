@@ -114,3 +114,7 @@ def stream_news(delay=3, max_messages=10):
     print("=" * 60)
     print("News Streaming Completed Successfully")
     print("=" * 60)
+
+
+if __name__ == "__main__":
+    stream_news()
