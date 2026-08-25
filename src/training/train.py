@@ -52,7 +52,7 @@ def train_one_epoch(
 
         optimizer.zero_grad()
 
-        logits, _ = model(features)
+        logits, *_ = model(features)
 
         loss = criterion(
             logits,
@@ -127,7 +127,7 @@ def validate_one_epoch(
 
         targets = targets.to(DEVICE)
 
-        logits, _ = model(features)
+        logits, *_ = model(features)
 
         loss = criterion(
             logits,
