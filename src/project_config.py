@@ -140,9 +140,14 @@ TFT_EMBEDDINGS = os.path.join(
     "tft_embeddings.npy"
 )
 
-FINBERT_EMBEDDINGS = os.path.join(
+TRAIN_FINBERT_EMBEDDINGS = os.path.join(
     ARTIFACT_DIR,
-    "finbert_embeddings.npy"
+    "train_finbert_embeddings.npy"
+)
+
+VAL_FINBERT_EMBEDDINGS = os.path.join(
+    ARTIFACT_DIR,
+    "val_finbert_embeddings.npy"
 )
 
 # ==========================================================
