@@ -1,0 +1,39 @@
+# ===========================================================
+# QuantFormer Backend — Python Dependencies
+# ===========================================================
+
+# Web Framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+
+# Data Validation
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# HTTP Client
+httpx>=0.27.0
+requests>=2.31.0
+
+# Market Data
+yfinance>=0.2.40
+
+# AI / ML
+torch>=2.0.0
+transformers>=4.40.0
+numpy>=1.24.0
+
+# Kafka Streaming
+kafka-python>=2.0.2
+
+# System Monitoring
+psutil>=5.9.0
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+
+# Logging
+python-json-logger>=2.0.0
+
+# Environment
+python-dotenv>=1.0.0
