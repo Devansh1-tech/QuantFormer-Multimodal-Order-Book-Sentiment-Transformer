@@ -150,7 +150,7 @@ class LatencyTimer:
     Usage:
         with LatencyTimer() as timer:
             result = model(input)
-        print(f"Inference took {timer.elapsed_ms} ms")
+        # print(f"Inference took {timer.elapsed_ms} ms")
     """
 
     def __init__(self):

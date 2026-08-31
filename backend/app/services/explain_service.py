@@ -16,14 +16,14 @@ Project: Multimodal Order Book & Sentiment Transformer
 import logging
 from typing import Dict, List, Any
 
-from backend.app.models.model_manager import ModelManager
-from backend.app.services.sentiment_service import SentimentService
-from backend.app.utils.constants import (
+from app.models.model_manager import ModelManager
+from app.services.sentiment_service import SentimentService
+from app.utils.constants import (
     INSIGHT_MATRIX,
     PREDICTION_DISCLAIMER,
 )
-from backend.app.services.insight_service import InsightService
-from backend.app.utils.helpers import LatencyTimer, utc_now_iso
+from app.services.insight_service import InsightService
+from app.utils.helpers import LatencyTimer, utc_now_iso
 
 logger = logging.getLogger(__name__)
 prediction_logger = logging.getLogger("quantformer.prediction")

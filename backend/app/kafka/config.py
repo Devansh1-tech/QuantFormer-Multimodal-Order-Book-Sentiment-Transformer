@@ -10,7 +10,7 @@ Project: Multimodal Order Book & Sentiment Transformer
 ===========================================================
 """
 
-from backend.app.core.config import get_settings
+from app.core.config import get_settings
 
 
 def get_kafka_config() -> dict:

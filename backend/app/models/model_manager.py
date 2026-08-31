@@ -235,7 +235,7 @@ class ModelManager:
         if not self._tft_loaded:
             raise RuntimeError("TFT model is not loaded")
 
-        from backend.app.utils.constants import TFT_CLASS_NAMES, TFT_TREND_MAP
+        from app.utils.constants import TFT_CLASS_NAMES, TFT_TREND_MAP
 
         if features.dim() == 2:
             features = features.unsqueeze(0)  # Add batch dimension
@@ -280,7 +280,7 @@ class ModelManager:
         if not self._finbert_loaded:
             raise RuntimeError("FinBERT model is not loaded")
 
-        from backend.app.utils.constants import FINBERT_LABELS
+        from app.utils.constants import FINBERT_LABELS
 
         inputs = self._finbert_tokenizer(
             text,
@@ -340,7 +340,7 @@ class ModelManager:
         if not self._fusion_loaded:
             raise RuntimeError("Fusion model is not loaded")
 
-        from backend.app.utils.constants import TFT_CLASS_NAMES
+        from app.utils.constants import TFT_CLASS_NAMES
 
         if market_features.dim() == 1:
             market_features = market_features.unsqueeze(0)

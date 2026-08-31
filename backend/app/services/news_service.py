@@ -14,8 +14,8 @@ Project: Multimodal Order Book & Sentiment Transformer
 import logging
 from typing import Dict, Any
 
-from backend.app.loaders.news_loader import NewsLoader
-from backend.app.utils.helpers import utc_now_iso
+from app.loaders.news_loader import NewsLoader
+from app.utils.helpers import utc_now_iso
 
 logger = logging.getLogger(__name__)
 

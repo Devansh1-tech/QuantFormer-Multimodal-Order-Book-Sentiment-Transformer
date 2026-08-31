@@ -17,9 +17,9 @@ from typing import Dict, List, Any, Optional
 import numpy as np
 import torch
 
-from backend.app.models.model_manager import ModelManager
-from backend.app.utils.constants import TFT_SEQUENCE_LENGTH, TFT_NUM_FEATURES
-from backend.app.utils.helpers import LatencyTimer, utc_now_iso
+from app.models.model_manager import ModelManager
+from app.utils.constants import TFT_SEQUENCE_LENGTH, TFT_NUM_FEATURES
+from app.utils.helpers import LatencyTimer, utc_now_iso
 
 logger = logging.getLogger(__name__)
 prediction_logger = logging.getLogger("quantformer.prediction")

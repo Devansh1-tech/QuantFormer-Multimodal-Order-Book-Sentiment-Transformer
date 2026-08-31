@@ -113,8 +113,8 @@ def test_client(mock_model_manager, mock_streaming_service):
     This avoids loading real models during testing.
     """
     from fastapi.testclient import TestClient
-    from backend.app.main import app
-    from backend.app.api import deps
+    from app.main import app
+    from app.api import deps
 
     # Override dependencies with mocks
     app.dependency_overrides[deps.get_model_manager] = lambda: mock_model_manager

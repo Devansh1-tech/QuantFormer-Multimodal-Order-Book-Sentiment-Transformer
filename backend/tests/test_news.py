@@ -33,7 +33,7 @@ def test_get_news_success(test_client):
         "message": None,
     }
 
-    with patch("backend.app.loaders.news_loader.NewsLoader.fetch", new_callable=AsyncMock) as mock_fetch:
+    with patch("app.loaders.news_loader.NewsLoader.fetch", new_callable=AsyncMock) as mock_fetch:
         mock_fetch.return_value = mock_news
 
         response = test_client.get("/api/v1/news?limit=5")
@@ -57,7 +57,7 @@ def test_news_unavailable_returns_empty_with_message(test_client):
         "message": "No recent financial news available.",
     }
 
-    with patch("backend.app.loaders.news_loader.NewsLoader.fetch", new_callable=AsyncMock) as mock_fetch:
+    with patch("app.loaders.news_loader.NewsLoader.fetch", new_callable=AsyncMock) as mock_fetch:
         mock_fetch.return_value = mock_empty_news
 
         response = test_client.get("/api/v1/news")

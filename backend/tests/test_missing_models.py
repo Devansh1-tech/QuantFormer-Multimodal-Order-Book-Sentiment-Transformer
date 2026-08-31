@@ -14,8 +14,8 @@ Project: Multimodal Order Book & Sentiment Transformer
 from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 
-from backend.app.main import app
-from backend.app.api import deps
+from app.main import app
+from app.api import deps
 
 
 def test_predict_model_not_loaded_returns_503(sample_features):

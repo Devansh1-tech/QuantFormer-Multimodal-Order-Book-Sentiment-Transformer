@@ -46,8 +46,8 @@ def test_dashboard_aggregation_success(test_client):
         "message": None,
     }
 
-    with patch("backend.app.loaders.market_loader.MarketLoader.fetch", new_callable=AsyncMock) as mock_market_fetch, \
-         patch("backend.app.loaders.news_loader.NewsLoader.fetch", new_callable=AsyncMock) as mock_news_fetch:
+    with patch("app.loaders.market_loader.MarketLoader.fetch", new_callable=AsyncMock) as mock_market_fetch, \
+         patch("app.loaders.news_loader.NewsLoader.fetch", new_callable=AsyncMock) as mock_news_fetch:
 
         mock_market_fetch.return_value = mock_market
         mock_news_fetch.return_value = mock_news

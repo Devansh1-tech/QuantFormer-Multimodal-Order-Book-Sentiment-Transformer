@@ -7,7 +7,7 @@ FastAPI application entry point with lifespan management,
 CORS configuration, and root endpoint.
 
 Run with:
-  uvicorn backend.app.main:app --reload
+  uvicorn app.main:app --reload
 
 Author : Team QuantFormer
 Project: Multimodal Order Book & Sentiment Transformer
@@ -20,15 +20,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.core.config import get_settings
-from backend.app.core.logging import setup_logging
-from backend.app.api.deps import (
+from app.core.config import get_settings
+from app.core.logging import setup_logging
+from app.api.deps import (
     initialize_dependencies,
     get_model_manager,
     get_streaming_service,
 )
-from backend.app.api.v1.router import api_v1_router
-from backend.app.utils.helpers import mark_startup, utc_now_iso
+from app.api.v1.router import api_v1_router
+from app.utils.helpers import mark_startup, utc_now_iso
 
 logger = logging.getLogger(__name__)
 

@@ -14,7 +14,7 @@ Project: Multimodal Order Book & Sentiment Transformer
 """
 
 from unittest.mock import AsyncMock, patch
-from backend.app.loaders.market_loader import MarketDataUnavailable
+from app.loaders.market_loader import MarketDataUnavailable
 
 
 def test_get_market_data_success(test_client):
@@ -37,7 +37,7 @@ def test_get_market_data_success(test_client):
         "cached": False,
     }
 
-    with patch("backend.app.loaders.market_loader.MarketLoader.fetch", new_callable=AsyncMock) as mock_fetch:
+    with patch("app.loaders.market_loader.MarketLoader.fetch", new_callable=AsyncMock) as mock_fetch:
         mock_fetch.return_value = mock_market_data
 
         response = test_client.get("/api/v1/market?symbol=AAPL")
@@ -72,7 +72,7 @@ def test_get_market_data_indian_stock(test_client):
         "cached": False,
     }
 
-    with patch("backend.app.loaders.market_loader.MarketLoader.fetch", new_callable=AsyncMock) as mock_fetch:
+    with patch("app.loaders.market_loader.MarketLoader.fetch", new_callable=AsyncMock) as mock_fetch:
         mock_fetch.return_value = mock_market_data
 
         response = test_client.get("/api/v1/market?symbol=RELIANCE.NS")
@@ -84,7 +84,7 @@ def test_get_market_data_indian_stock(test_client):
 
 def test_market_data_unavailable_returns_503(test_client):
     """Test that failure to fetch market data when cache is empty returns HTTP 503."""
-    with patch("backend.app.loaders.market_loader.MarketLoader.fetch", new_callable=AsyncMock) as mock_fetch:
+    with patch("app.loaders.market_loader.MarketLoader.fetch", new_callable=AsyncMock) as mock_fetch:
         mock_fetch.side_effect = MarketDataUnavailable("Market data unavailable. Yahoo Finance is unreachable.")
 
         response = test_client.get("/api/v1/market?symbol=INVALID_TICKER")

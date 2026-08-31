@@ -16,11 +16,11 @@ Project: Multimodal Order Book & Sentiment Transformer
 
 from fastapi import APIRouter, Depends, Query, HTTPException
 
-from backend.app.api.deps import get_market_service, get_settings
-from backend.app.core.config import Settings
-from backend.app.services.market_service import MarketService
-from backend.app.loaders.market_loader import MarketDataUnavailable
-from backend.app.schemas.market import MarketResponse, MarketQuote
+from app.api.deps import get_market_service, get_settings
+from app.core.config import Settings
+from app.services.market_service import MarketService
+from app.loaders.market_loader import MarketDataUnavailable
+from app.schemas.market import MarketResponse, MarketQuote
 
 router = APIRouter()
 
