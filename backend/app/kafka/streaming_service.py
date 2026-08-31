@@ -18,9 +18,9 @@ Project: Multimodal Order Book & Sentiment Transformer
 import logging
 from typing import Any, Dict, List
 
-from backend.app.core.config import Settings
-from backend.app.kafka.producer import KafkaProducer
-from backend.app.kafka.consumer import KafkaConsumer
+from app.core.config import Settings
+from app.kafka.producer import KafkaProducer
+from app.kafka.consumer import KafkaConsumer
 
 logger = logging.getLogger(__name__)
 

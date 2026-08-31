@@ -15,8 +15,8 @@ Project: Multimodal Order Book & Sentiment Transformer
 import logging
 from typing import Dict, Any
 
-from backend.app.loaders.market_loader import MarketLoader, MarketDataUnavailable
-from backend.app.utils.helpers import utc_now_iso
+from app.loaders.market_loader import MarketLoader, MarketDataUnavailable
+from app.utils.helpers import utc_now_iso
 
 logger = logging.getLogger(__name__)
 

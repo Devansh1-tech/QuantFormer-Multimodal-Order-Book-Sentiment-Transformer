@@ -15,9 +15,9 @@ Project: Multimodal Order Book & Sentiment Transformer
 
 from fastapi import APIRouter, Depends, Query
 
-from backend.app.api.deps import get_news_service
-from backend.app.services.news_service import NewsService
-from backend.app.schemas.news import NewsResponse, NewsArticle
+from app.api.deps import get_news_service
+from app.services.news_service import NewsService
+from app.schemas.news import NewsResponse, NewsArticle
 
 router = APIRouter()
 

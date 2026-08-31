@@ -15,9 +15,9 @@ Project: Multimodal Order Book & Sentiment Transformer
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.app.api.deps import get_prediction_service
-from backend.app.services.prediction_service import PredictionService
-from backend.app.schemas.predict import PredictRequest, PredictResponse
+from app.api.deps import get_prediction_service
+from app.services.prediction_service import PredictionService
+from app.schemas.predict import PredictRequest, PredictResponse
 
 router = APIRouter()
 

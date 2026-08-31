@@ -10,10 +10,10 @@ Project: Multimodal Order Book & Sentiment Transformer
 ===========================================================
 """
 
-from backend.app.core.config import Settings
-from backend.app.kafka.streaming_service import StreamingService
-from backend.app.kafka.producer import KafkaProducer
-from backend.app.kafka.consumer import KafkaConsumer
+from app.core.config import Settings
+from app.kafka.streaming_service import StreamingService
+from app.kafka.producer import KafkaProducer
+from app.kafka.consumer import KafkaConsumer
 
 
 def test_kafka_disabled_producer_safe_noop():

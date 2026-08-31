@@ -13,8 +13,8 @@ Project: Multimodal Order Book & Sentiment Transformer
 import logging
 from typing import Dict, Any
 
-from backend.app.models.model_manager import ModelManager
-from backend.app.utils.helpers import LatencyTimer, utc_now_iso
+from app.models.model_manager import ModelManager
+from app.utils.helpers import LatencyTimer, utc_now_iso
 
 logger = logging.getLogger(__name__)
 prediction_logger = logging.getLogger("quantformer.prediction")

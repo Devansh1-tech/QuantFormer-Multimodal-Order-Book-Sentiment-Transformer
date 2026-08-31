@@ -14,9 +14,9 @@ Project: Multimodal Order Book & Sentiment Transformer
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.app.api.deps import get_sentiment_service
-from backend.app.services.sentiment_service import SentimentService
-from backend.app.schemas.sentiment import SentimentRequest, SentimentResponse
+from app.api.deps import get_sentiment_service
+from app.services.sentiment_service import SentimentService
+from app.schemas.sentiment import SentimentRequest, SentimentResponse
 
 router = APIRouter()
 

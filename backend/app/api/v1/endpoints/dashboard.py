@@ -15,9 +15,9 @@ Project: Multimodal Order Book & Sentiment Transformer
 
 from fastapi import APIRouter, Depends, Query
 
-from backend.app.api.deps import get_dashboard_service, get_settings
-from backend.app.core.config import Settings
-from backend.app.services.dashboard_service import DashboardService
+from app.api.deps import get_dashboard_service, get_settings
+from app.core.config import Settings
+from app.services.dashboard_service import DashboardService
 
 router = APIRouter()
 

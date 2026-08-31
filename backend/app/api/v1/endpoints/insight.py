@@ -15,9 +15,9 @@ Project: Multimodal Order Book & Sentiment Transformer
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.app.api.deps import get_insight_service
-from backend.app.services.insight_service import InsightService
-from backend.app.schemas.insight import InsightRequest, InsightResponse
+from app.api.deps import get_insight_service
+from app.services.insight_service import InsightService
+from app.schemas.insight import InsightRequest, InsightResponse
 
 router = APIRouter()
 

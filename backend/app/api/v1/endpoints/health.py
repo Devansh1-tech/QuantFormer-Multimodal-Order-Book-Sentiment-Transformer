@@ -20,22 +20,22 @@ Project: Multimodal Order Book & Sentiment Transformer
 
 from fastapi import APIRouter, Depends
 
-from backend.app.api.deps import (
+from app.api.deps import (
     get_model_manager,
     get_streaming_service,
     get_settings,
 )
-from backend.app.core.config import Settings
-from backend.app.models.model_manager import ModelManager
-from backend.app.kafka.streaming_service import StreamingService
-from backend.app.schemas.health import (
+from app.core.config import Settings
+from app.models.model_manager import ModelManager
+from app.kafka.streaming_service import StreamingService
+from app.schemas.health import (
     HealthResponse,
     ModelHealthStatus,
     GPUStatus,
     SystemStatus,
     KafkaStatus,
 )
-from backend.app.utils.helpers import (
+from app.utils.helpers import (
     get_gpu_info,
     get_system_info,
     get_uptime_seconds,

@@ -15,18 +15,18 @@ Project: Multimodal Order Book & Sentiment Transformer
 from functools import lru_cache
 from fastapi import Depends
 
-from backend.app.core.config import Settings, get_settings
-from backend.app.models.model_manager import ModelManager
-from backend.app.loaders.market_loader import MarketLoader
-from backend.app.loaders.news_loader import NewsLoader
-from backend.app.services.market_service import MarketService
-from backend.app.services.news_service import NewsService
-from backend.app.services.prediction_service import PredictionService
-from backend.app.services.sentiment_service import SentimentService
-from backend.app.services.insight_service import InsightService
-from backend.app.services.explain_service import ExplainService
-from backend.app.services.dashboard_service import DashboardService
-from backend.app.kafka.streaming_service import StreamingService
+from app.core.config import Settings, get_settings
+from app.models.model_manager import ModelManager
+from app.loaders.market_loader import MarketLoader
+from app.loaders.news_loader import NewsLoader
+from app.services.market_service import MarketService
+from app.services.news_service import NewsService
+from app.services.prediction_service import PredictionService
+from app.services.sentiment_service import SentimentService
+from app.services.insight_service import InsightService
+from app.services.explain_service import ExplainService
+from app.services.dashboard_service import DashboardService
+from app.kafka.streaming_service import StreamingService
 
 
 # ===========================================================

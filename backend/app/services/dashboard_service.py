@@ -17,13 +17,13 @@ Project: Multimodal Order Book & Sentiment Transformer
 import logging
 from typing import Dict, Any, Optional
 
-from backend.app.models.model_manager import ModelManager
-from backend.app.services.market_service import MarketService
-from backend.app.services.news_service import NewsService
-from backend.app.services.sentiment_service import SentimentService
-from backend.app.services.insight_service import InsightService
-from backend.app.services.explain_service import ExplainService
-from backend.app.utils.helpers import (
+from app.models.model_manager import ModelManager
+from app.services.market_service import MarketService
+from app.services.news_service import NewsService
+from app.services.sentiment_service import SentimentService
+from app.services.insight_service import InsightService
+from app.services.explain_service import ExplainService
+from app.utils.helpers import (
     LatencyTimer,
     utc_now_iso,
     get_uptime_human,

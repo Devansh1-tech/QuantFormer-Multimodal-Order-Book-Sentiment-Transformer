@@ -14,11 +14,11 @@ Project: Multimodal Order Book & Sentiment Transformer
 
 from fastapi import APIRouter, Depends
 
-from backend.app.api.deps import get_model_manager
-from backend.app.models.model_manager import ModelManager
-from backend.app.schemas.models import ModelsResponse, ModelDetail
-from backend.app.utils.constants import MODEL_INFO
-from backend.app.utils.helpers import utc_now_iso
+from app.api.deps import get_model_manager
+from app.models.model_manager import ModelManager
+from app.schemas.models import ModelsResponse, ModelDetail
+from app.utils.constants import MODEL_INFO
+from app.utils.helpers import utc_now_iso
 
 router = APIRouter()
 
