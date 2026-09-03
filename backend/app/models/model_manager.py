@@ -1,427 +1,109 @@
-"""
-===========================================================
-QuantFormer Backend — Model Manager (Singleton)
-===========================================================
-
-Thread-safe singleton that loads and manages all three
-QuantFormer AI models:
-
-  1. Temporal Fusion Transformer (TFT) — Primary Prediction
-  2. FinBERT — News Sentiment Analysis
-  3. QuantFormer Fusion — Internal Multimodal Insight
-
-Models are loaded once during application startup (lifespan).
-Supports CUDA and CPU. Exposes health status for monitoring.
-
-Author : Team QuantFormer
-Project: Multimodal Order Book & Sentiment Transformer
-===========================================================
-"""
-
-import logging
-import threading
-from pathlib import Path
-from typing import Dict, Optional, Any
-
 import torch
-import torch.nn.functional as F
+import logging
+from typing import Dict, Any, Tuple
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-logger = logging.getLogger(__name__)
+from backend.app.core.config import settings
+from backend.app.models.tft_model import TemporalFusionTransformer
+from backend.app.models.fusion_model import QuantFormerFusion
 
+logger = logging.getLogger("backend")
 
 class ModelManager:
     """
-    Singleton manager for all QuantFormer AI models.
-
-    Usage:
-        manager = ModelManager()
-        await manager.load_all_models(settings)
-        logits = manager.predict_tft(features_tensor)
+    Singleton Manager for all AI Models.
+    Handles device placement, memory caching, and lazy loading.
     """
-
-    _instance: Optional["ModelManager"] = None
-    _lock = threading.Lock()
-
-    def __new__(cls) -> "ModelManager":
-        with cls._lock:
-            if cls._instance is None:
-                cls._instance = super().__new__(cls)
-                cls._instance._initialized = False
-            return cls._instance
-
+    _instance = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(ModelManager, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+        
     def __init__(self):
         if self._initialized:
             return
+            
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.tft_model = None
+        self.finbert_model = None
+        self.finbert_tokenizer = None
+        self.fusion_model = None
+        
+        self.tft_status = "unloaded"
+        self.finbert_status = "unloaded"
+        self.fusion_status = "unloaded"
+        
         self._initialized = True
-
-        # Device
-        self.device = torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu"
-        )
-
-        # Model references
-        self._tft_model = None
-        self._finbert_model = None
-        self._finbert_tokenizer = None
-        self._fusion_model = None
-
-        # Status tracking
-        self._tft_loaded = False
-        self._finbert_loaded = False
-        self._fusion_loaded = False
-
-        self._tft_checkpoint_exists = False
-        self._finbert_checkpoint_exists = False
-        self._fusion_checkpoint_exists = False
-
-        self._checkpoint_paths: Dict[str, str] = {}
-
-    # ==========================================================
-    # Model Loading
-    # ==========================================================
-
-    async def load_all_models(self, settings) -> None:
-        """
-        Load all three models from checkpoints.
-        Called once during FastAPI lifespan startup.
-        """
-        logger.info("=" * 60)
-        logger.info("QuantFormer Model Manager — Loading Models")
-        logger.info(f"Device: {self.device}")
-        logger.info("=" * 60)
-
-        self._load_tft(settings)
-        self._load_finbert(settings)
-        self._load_fusion(settings)
-
-        loaded_count = sum([
-            self._tft_loaded,
-            self._finbert_loaded,
-            self._fusion_loaded,
-        ])
-
-        logger.info("=" * 60)
-        logger.info(f"Model Loading Complete: {loaded_count}/3 models loaded")
-        logger.info("=" * 60)
-
-    def _load_tft(self, settings) -> None:
-        """Load the Temporal Fusion Transformer checkpoint."""
-        checkpoint_path = Path(settings.tft_checkpoint_abs)
-        self._checkpoint_paths["tft"] = str(checkpoint_path)
-        self._tft_checkpoint_exists = checkpoint_path.exists()
-
-        if not self._tft_checkpoint_exists:
-            logger.error(f"TFT checkpoint not found: {checkpoint_path}")
-            return
-
+        logger.info(f"ModelManager initialized on device: {self.device}")
+        
+    def load_all_models(self):
+        """Loads all checkpoints into memory."""
+        self._load_tft()
+        self._load_finbert()
+        self._load_fusion()
+        self._warmup_models()
+        
+    def _load_tft(self):
         try:
-            # Import the model class from the existing project
-            from src.models.tft_model import TemporalFusionTransformer
-
-            self._tft_model = TemporalFusionTransformer()
-            checkpoint = torch.load(
-                str(checkpoint_path),
-                map_location=self.device,
-                weights_only=False,
-            )
-            self._tft_model.load_state_dict(checkpoint["model_state_dict"])
-            self._tft_model.to(self.device)
-            self._tft_model.eval()
-            self._tft_loaded = True
-
-            accuracy = checkpoint.get("best_validation_accuracy", "N/A")
-            logger.info(
-                f"[OK] TFT loaded successfully | "
-                f"Accuracy: {accuracy} | Device: {self.device}"
-            )
-
+            logger.info("Loading TFT model...")
+            self.tft_model = TemporalFusionTransformer()
+            checkpoint = torch.load(settings.TFT_MODEL_PATH, map_location=self.device)
+            self.tft_model.load_state_dict(checkpoint['model_state_dict'])
+            self.tft_model.to(self.device)
+            self.tft_model.eval()
+            self.tft_status = "ready"
+            logger.info("TFT model loaded successfully.")
         except Exception as e:
-            logger.error(f"[FAIL] Failed to load TFT: {e}", exc_info=True)
-
-    def _load_finbert(self, settings) -> None:
-        """Load the FinBERT model for sentiment analysis."""
-        checkpoint_path = Path(settings.finbert_checkpoint_abs)
-        self._checkpoint_paths["finbert"] = str(checkpoint_path)
-        self._finbert_checkpoint_exists = checkpoint_path.exists()
-
+            self.tft_status = f"error: {str(e)}"
+            logger.error(f"Failed to load TFT model: {e}", exc_info=True)
+            
+    def _load_finbert(self):
         try:
-            model_name = settings.finbert_model_name
-
-            # Load tokenizer and model architecture from HuggingFace
-            self._finbert_tokenizer = AutoTokenizer.from_pretrained(model_name)
-            self._finbert_model = AutoModelForSequenceClassification.from_pretrained(
-                model_name, num_labels=3
-            )
-
-            # Load fine-tuned checkpoint weights if available
-            if self._finbert_checkpoint_exists:
-                state_dict = torch.load(
-                    str(checkpoint_path),
-                    map_location=self.device,
-                    weights_only=False,
-                )
-                self._finbert_model.load_state_dict(state_dict)
-                logger.info("  FinBERT: Loaded fine-tuned checkpoint weights")
-            else:
-                logger.warning(
-                    f"  FinBERT: Checkpoint not found at {checkpoint_path}. "
-                    f"Using pretrained {model_name} weights."
-                )
-
-            self._finbert_model.to(self.device)
-            self._finbert_model.eval()
-
-            # Freeze parameters for inference
-            for param in self._finbert_model.parameters():
-                param.requires_grad = False
-
-            self._finbert_loaded = True
-            logger.info(
-                f"[OK] FinBERT loaded successfully | Device: {self.device}"
-            )
-
+            logger.info("Loading FinBERT model...")
+            self.finbert_tokenizer = AutoTokenizer.from_pretrained("ProsusAI/finbert")
+            self.finbert_model = AutoModelForSequenceClassification.from_pretrained("ProsusAI/finbert", num_labels=3)
+            checkpoint = torch.load(settings.FINBERT_MODEL_PATH, map_location=self.device)
+            self.finbert_model.load_state_dict(checkpoint, strict=False)
+            self.finbert_model.to(self.device)
+            self.finbert_model.eval()
+            self.finbert_status = "ready"
+            logger.info("FinBERT model loaded successfully.")
         except Exception as e:
-            logger.error(f"[FAIL] Failed to load FinBERT: {e}", exc_info=True)
-
-    def _load_fusion(self, settings) -> None:
-        """Load the QuantFormer Fusion model."""
-        checkpoint_path = Path(settings.fusion_checkpoint_abs)
-        self._checkpoint_paths["fusion"] = str(checkpoint_path)
-        self._fusion_checkpoint_exists = checkpoint_path.exists()
-
-        if not self._fusion_checkpoint_exists:
-            logger.error(f"Fusion checkpoint not found: {checkpoint_path}")
-            return
-
+            self.finbert_status = f"error: {str(e)}"
+            logger.error(f"Failed to load FinBERT model: {e}", exc_info=True)
+            
+    def _load_fusion(self):
         try:
-            from src.models.fusion_model import QuantFormerFusion
-
-            self._fusion_model = QuantFormerFusion()
-            checkpoint = torch.load(
-                str(checkpoint_path),
-                map_location=self.device,
-                weights_only=False,
-            )
-            self._fusion_model.load_state_dict(checkpoint["model_state_dict"])
-            self._fusion_model.to(self.device)
-            self._fusion_model.eval()
-            self._fusion_loaded = True
-
-            logger.info(
-                f"[OK] Fusion loaded successfully | Device: {self.device}"
-            )
-
+            logger.info("Loading Fusion model...")
+            self.fusion_model = QuantFormerFusion()
+            checkpoint = torch.load(settings.FUSION_MODEL_PATH, map_location=self.device)
+            self.fusion_model.load_state_dict(checkpoint['model_state_dict'])
+            self.fusion_model.to(self.device)
+            self.fusion_model.eval()
+            self.fusion_status = "ready"
+            logger.info("Fusion model loaded successfully.")
         except Exception as e:
-            logger.error(f"[FAIL] Failed to load Fusion: {e}", exc_info=True)
-
-    # ==========================================================
-    # Inference Methods
-    # ==========================================================
-
-    def predict_tft(self, features: torch.Tensor) -> Dict[str, Any]:
-        """
-        Run TFT inference on market features.
-
-        Parameters
-        ----------
-        features : torch.Tensor of shape (1, 100, 143) or (100, 143)
-
-        Returns
-        -------
-        dict with: prediction (str), trend (str), confidence (%),
-             probabilities (dict), class_index (int)
-        """
-        if not self._tft_loaded:
-            raise RuntimeError("TFT model is not loaded")
-
-        from app.utils.constants import TFT_CLASS_NAMES, TFT_TREND_MAP
-
-        if features.dim() == 2:
-            features = features.unsqueeze(0)  # Add batch dimension
-
-        features = features.to(self.device)
-
+            self.fusion_status = f"error: {str(e)}"
+            logger.error(f"Failed to load Fusion model: {e}", exc_info=True)
+            
+    def _warmup_models(self):
+        logger.info("Warming up models...")
         with torch.no_grad():
-            logits, pooled_features, attention_weights = self._tft_model(features)
-            probabilities = F.softmax(logits, dim=-1)
-            confidence, predicted_class = torch.max(probabilities, dim=-1)
+            if self.tft_status == "ready":
+                dummy_market = torch.randn(1, 100, 143).to(self.device)
+                self.tft_model(dummy_market)
+                
+            if self.finbert_status == "ready":
+                inputs = self.finbert_tokenizer("Test", return_tensors="pt").to(self.device)
+                self.finbert_model(**inputs)
+                
+            if self.tft_status == "ready" and self.fusion_status == "ready":
+                dummy_market_feat = torch.randn(1, 128).to(self.device)
+                dummy_news_feat = torch.randn(1, 768).to(self.device)
+                self.fusion_model(dummy_market_feat, dummy_news_feat)
+        logger.info("Model warmup complete.")
 
-        class_idx = predicted_class.item()
-        prediction = TFT_CLASS_NAMES[class_idx]
-        trend = TFT_TREND_MAP[prediction]
-        probs = probabilities.squeeze(0).cpu().tolist()
-
-        return {
-            "prediction": prediction,
-            "trend": trend,
-            "confidence": round(confidence.item() * 100, 2),
-            "probabilities": {
-                name: round(p * 100, 2)
-                for name, p in zip(TFT_CLASS_NAMES, probs)
-            },
-            "class_index": class_idx,
-            "pooled_features": pooled_features,
-        }
-
-    def analyze_sentiment(self, text: str) -> Dict[str, Any]:
-        """
-        Run FinBERT sentiment analysis on financial text.
-
-        Parameters
-        ----------
-        text : str, financial news text
-
-        Returns
-        -------
-        dict with: sentiment (str), confidence (%), scores (dict),
-             embedding (tensor)
-        """
-        if not self._finbert_loaded:
-            raise RuntimeError("FinBERT model is not loaded")
-
-        from app.utils.constants import FINBERT_LABELS
-
-        inputs = self._finbert_tokenizer(
-            text,
-            return_tensors="pt",
-            truncation=True,
-            padding=True,
-            max_length=128,
-        )
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
-
-        with torch.no_grad():
-            outputs = self._finbert_model(**inputs)
-            logits = outputs.logits
-            probabilities = F.softmax(logits, dim=-1)
-            confidence, predicted_class = torch.max(probabilities, dim=-1)
-
-            # Extract embedding from last hidden state via base model
-            base_outputs = self._finbert_model.bert(**inputs)
-            embedding = base_outputs.last_hidden_state.mean(dim=1).squeeze(0).cpu()
-
-        class_idx = predicted_class.item()
-        sentiment = FINBERT_LABELS[class_idx]
-        probs = probabilities.squeeze(0).cpu().tolist()
-
-        return {
-            "sentiment": sentiment,
-            "confidence": round(confidence.item() * 100, 2),
-            "scores": {
-                label: round(p * 100, 2)
-                for label, p in zip(FINBERT_LABELS, probs)
-            },
-            "class_index": class_idx,
-            "embedding": embedding,
-        }
-
-    def predict_fusion(
-        self,
-        market_features: torch.Tensor,
-        news_embedding: torch.Tensor,
-    ) -> Dict[str, Any]:
-        """
-        Run Fusion model inference (internal only).
-
-        This result is used to ENRICH AI insights, not exposed
-        as an independent trading prediction.
-
-        Parameters
-        ----------
-        market_features : torch.Tensor of shape (1, 128) — TFT pooled features
-        news_embedding : torch.Tensor of shape (1, 768) or (768,) — FinBERT embedding
-
-        Returns
-        -------
-        dict with: class_index (int), probabilities (list),
-             confidence (float)
-        """
-        if not self._fusion_loaded:
-            raise RuntimeError("Fusion model is not loaded")
-
-        from app.utils.constants import TFT_CLASS_NAMES
-
-        if market_features.dim() == 1:
-            market_features = market_features.unsqueeze(0)
-        if news_embedding.dim() == 1:
-            news_embedding = news_embedding.unsqueeze(0)
-
-        market_features = market_features.to(self.device)
-        news_embedding = news_embedding.to(self.device)
-
-        with torch.no_grad():
-            logits = self._fusion_model(market_features, news_embedding)
-            probabilities = F.softmax(logits, dim=-1)
-            confidence, predicted_class = torch.max(probabilities, dim=-1)
-
-        probs = probabilities.squeeze(0).cpu().tolist()
-
-        return {
-            "class_index": predicted_class.item(),
-            "probabilities": probs,
-            "confidence": round(confidence.item() * 100, 2),
-            "class_name": TFT_CLASS_NAMES[predicted_class.item()],
-        }
-
-    # ==========================================================
-    # Health & Status
-    # ==========================================================
-
-    def get_health_status(self) -> Dict[str, Any]:
-        """Return health status of all models."""
-        device_str = str(self.device)
-
-        return {
-            "tft": {
-                "name": "Temporal Fusion Transformer",
-                "loaded": self._tft_loaded,
-                "checkpoint_exists": self._tft_checkpoint_exists,
-                "checkpoint_path": self._checkpoint_paths.get("tft", ""),
-                "device": device_str,
-                "version": "1.0.0",
-            },
-            "finbert": {
-                "name": "FinBERT",
-                "loaded": self._finbert_loaded,
-                "checkpoint_exists": self._finbert_checkpoint_exists,
-                "checkpoint_path": self._checkpoint_paths.get("finbert", ""),
-                "device": device_str,
-                "version": "1.0.0",
-            },
-            "fusion": {
-                "name": "QuantFormer Fusion",
-                "loaded": self._fusion_loaded,
-                "checkpoint_exists": self._fusion_checkpoint_exists,
-                "checkpoint_path": self._checkpoint_paths.get("fusion", ""),
-                "device": device_str,
-                "version": "1.0.0",
-            },
-        }
-
-    @property
-    def is_healthy(self) -> bool:
-        """True if TFT (primary) model is loaded."""
-        return self._tft_loaded
-
-    @property
-    def all_loaded(self) -> bool:
-        """True if all three models are loaded."""
-        return self._tft_loaded and self._finbert_loaded and self._fusion_loaded
-
-    @property
-    def loaded_count(self) -> int:
-        """Count of loaded models."""
-        return sum([self._tft_loaded, self._finbert_loaded, self._fusion_loaded])
-
-    @property
-    def tft_loaded(self) -> bool:
-        return self._tft_loaded
-
-    @property
-    def finbert_loaded(self) -> bool:
-        return self._finbert_loaded
-
-    @property
-    def fusion_loaded(self) -> bool:
-        return self._fusion_loaded
+model_manager = ModelManager()

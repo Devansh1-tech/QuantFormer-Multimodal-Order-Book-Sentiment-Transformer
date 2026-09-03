@@ -104,7 +104,7 @@ export const api = {
   // 1. Primary Dashboard Data (GET /api/v1/dashboard?symbol=...)
   getDashboard: async (symbol = 'AAPL'): Promise<DashboardResponse> => {
     try {
-      const response = await client.get<BackendDashboardResponse>(`/api/v1/dashboard`, {
+      const response = await client.get<BackendDashboardResponse>(`/api/v1/dashboard/`, {
         params: { symbol },
       });
       isBackendLive = true;
@@ -174,11 +174,11 @@ export const api = {
             publisher: art.source || 'Financial News',
             publishedAt: formatRelativeTime(art.published_at),
             ticker: symbol,
-            sentiment: (raw.sentiment?.sentiment ? (raw.sentiment.sentiment.charAt(0).toUpperCase() + raw.sentiment.sentiment.slice(1)) : (isPos ? 'Positive' : 'Neutral')) as 'Positive' | 'Negative' | 'Neutral',
-            confidence: raw.sentiment?.confidence ? Math.round(raw.sentiment.confidence) / 100 : 0.88,
+            sentiment: (idx === 0 && raw.sentiment?.sentiment ? (raw.sentiment.sentiment.charAt(0).toUpperCase() + raw.sentiment.sentiment.slice(1)) : (isPos ? 'Positive' : 'Neutral')) as 'Positive' | 'Negative' | 'Neutral',
+            confidence: (idx === 0 && raw.sentiment?.confidence) ? Math.round(raw.sentiment.confidence) / 100 : (isPos ? 0.88 : 0.65),
             summary: art.description || art.headline,
             url: art.url,
-            finbertScores: raw.sentiment?.scores ? {
+            finbertScores: (idx === 0 && raw.sentiment?.scores) ? {
               positive: (raw.sentiment.scores.positive || 85) / 100,
               neutral: (raw.sentiment.scores.neutral || 10) / 100,
               negative: (raw.sentiment.scores.negative || 5) / 100,
@@ -189,9 +189,14 @@ export const api = {
 
       // Map TFT Prediction
       const predRaw = raw.prediction;
+      const predStr = predRaw?.prediction?.toUpperCase();
+      let mappedPrediction: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
+      if (predStr === 'UP' || predStr === 'BULLISH') mappedPrediction = 'BUY';
+      else if (predStr === 'DOWN' || predStr === 'BEARISH') mappedPrediction = 'SELL';
+      
       const prediction: TFTPrediction = {
         symbol,
-        prediction: (predRaw?.prediction?.toUpperCase() === 'UP' || predRaw?.prediction?.toUpperCase() === 'BULLISH') ? 'BUY' : 'BUY',
+        prediction: mappedPrediction,
         marketTrend: predRaw?.market_trend || 'Bullish',
         confidence: predRaw?.confidence || 82.6,
         probabilityDistribution: {
@@ -273,7 +278,7 @@ export const api = {
 
   // 2. Market Data (GET /api/v1/market?symbol=...)
   getMarket: async (symbol = 'AAPL'): Promise<BackendMarketResponse> => {
-    const response = await client.get<BackendMarketResponse>(`/api/v1/market`, {
+    const response = await client.get<BackendMarketResponse>(`/api/v1/market/`, {
       params: { symbol },
     });
     return response.data;
@@ -281,7 +286,7 @@ export const api = {
 
   // 3. News Feed (GET /api/v1/news?limit=...&query=...)
   getNews: async (limit = 10, query = 'stock market finance'): Promise<BackendNewsResponse> => {
-    const response = await client.get<BackendNewsResponse>(`/api/v1/news`, {
+    const response = await client.get<BackendNewsResponse>(`/api/v1/news/`, {
       params: { limit, query },
     });
     return response.data;
@@ -294,7 +299,7 @@ export const api = {
       Array.from({ length: 143 }, () => Math.random() * 0.2 - 0.1)
     );
 
-    const response = await client.post<BackendPredictResponse>(`/api/v1/predict`, {
+    const response = await client.post<BackendPredictResponse>(`/api/v1/predict/`, {
       features,
       symbol: payload.symbol || 'AAPL',
     });
@@ -303,7 +308,7 @@ export const api = {
 
   // 5. FinBERT Deep Sentiment Analysis (POST /api/v1/sentiment)
   postSentiment: async (payload: { text: string; ticker?: string }): Promise<BackendSentimentResponse> => {
-    const response = await client.post<BackendSentimentResponse>(`/api/v1/sentiment`, {
+    const response = await client.post<BackendSentimentResponse>(`/api/v1/sentiment/`, {
       text: payload.text,
     });
     return response.data;
@@ -315,7 +320,7 @@ export const api = {
     news_text: string;
     market_confidence?: number;
   }): Promise<BackendInsightResponse> => {
-    const response = await client.post<BackendInsightResponse>(`/api/v1/insight`, {
+    const response = await client.post<BackendInsightResponse>(`/api/v1/insight/`, {
       market_prediction: payload.market_prediction,
       news_text: payload.news_text,
       market_confidence: payload.market_confidence,
@@ -329,7 +334,7 @@ export const api = {
     confidence: number;
     news_text: string;
   }): Promise<BackendExplainResponse> => {
-    const response = await client.post<BackendExplainResponse>(`/api/v1/explain`, {
+    const response = await client.post<BackendExplainResponse>(`/api/v1/explain/`, {
       market_prediction: payload.market_prediction,
       confidence: payload.confidence,
       news_text: payload.news_text,
@@ -339,13 +344,13 @@ export const api = {
 
   // 8. Model Registry & Checkpoints (GET /api/v1/models)
   getModels: async (): Promise<BackendModelsResponse> => {
-    const response = await client.get<BackendModelsResponse>(`/api/v1/models`);
+    const response = await client.get<BackendModelsResponse>(`/api/v1/models/`);
     return response.data;
   },
 
   // 9. Comprehensive System Health Check (GET /api/v1/health)
   getHealth: async (): Promise<BackendHealthResponse> => {
-    const response = await client.get<BackendHealthResponse>(`/api/v1/health`);
+    const response = await client.get<BackendHealthResponse>(`/api/v1/health/`);
     return response.data;
   },
 };

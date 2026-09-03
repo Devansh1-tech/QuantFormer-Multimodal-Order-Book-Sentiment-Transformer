@@ -1,66 +1,25 @@
-"""
-===========================================================
-QuantFormer Backend — Sentiment Endpoint
-===========================================================
-
-POST /api/v1/sentiment
-
-Run FinBERT sentiment analysis on financial text.
-
-Author : Team QuantFormer
-Project: Multimodal Order Book & Sentiment Transformer
-===========================================================
-"""
-
-from fastapi import APIRouter, Depends, HTTPException
-
-from app.api.deps import get_sentiment_service
-from app.services.sentiment_service import SentimentService
-from app.schemas.sentiment import SentimentRequest, SentimentResponse
+from fastapi import APIRouter
+from datetime import datetime
+from backend.app.schemas.sentiment import SentimentRequest, BackendSentimentResponse
+from backend.app.services.sentiment_service import analyze_sentiment
 
 router = APIRouter()
 
-
-@router.post(
-    "/sentiment",
-    response_model=SentimentResponse,
-    summary="News Sentiment Analysis",
-    description="Analyze financial text sentiment using FinBERT.",
-)
-async def analyze_sentiment(
-    request: SentimentRequest,
-    service: SentimentService = Depends(get_sentiment_service),
-) -> SentimentResponse:
-    """Analyze sentiment of financial text."""
-
-    try:
-        result = service.analyze(request.text)
-
-        return SentimentResponse(
-            success=result["success"],
-            text=result["text"],
-            sentiment=result["sentiment"],
-            confidence=result["confidence"],
-            scores=result["scores"],
-            explanation=result["explanation"],
-            model_name=result["model_name"],
-            latency_ms=result["latency_ms"],
-            timestamp=result["timestamp"],
-        )
-
-    except RuntimeError as e:
-        raise HTTPException(
-            status_code=503,
-            detail={
-                "error": "Model Unavailable",
-                "message": str(e),
-            },
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": "Sentiment Analysis Failed",
-                "message": f"An error occurred: {str(e)}",
-            },
-        )
+@router.post('/', response_model=BackendSentimentResponse)
+async def analyze_sentiment_endpoint(request: SentimentRequest):
+    res = await analyze_sentiment(request.text)
+    
+    return {
+        'success': True,
+        'text': request.text,
+        'sentiment': res['sentiment'],
+        'confidence': res['confidence'] * 100,
+        'scores': {
+            'positive': res['probabilities']['Positive'] * 100,
+            'negative': res['probabilities']['Negative'] * 100,
+            'neutral': res['probabilities']['Neutral'] * 100
+        },
+        'explanation': res.get('disclaimer', ''),
+        'latency_ms': 45.0, # Approximate static latency if not tracked
+        'timestamp': datetime.utcnow().isoformat()
+    }

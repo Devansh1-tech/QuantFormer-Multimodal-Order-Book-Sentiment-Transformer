@@ -1,60 +1,16 @@
-"""
-===========================================================
-QuantFormer Backend — Market Service
-===========================================================
+from typing import Dict, Any, List
+import asyncio
+from backend.app.loaders.market_loader import fetch_market_data
 
-Business logic for market data processing.
-Delegates fetching to the MarketLoader and transforms
-data into response schemas.
-
-Author : Team QuantFormer
-Project: Multimodal Order Book & Sentiment Transformer
-===========================================================
-"""
-
-import logging
-from typing import Dict, Any
-
-from app.loaders.market_loader import MarketLoader, MarketDataUnavailable
-from app.utils.helpers import utc_now_iso
-
-logger = logging.getLogger(__name__)
-
-
-class MarketService:
+async def get_market_summary(ticker: str) -> Dict[str, Any]:
     """
-    Market data service layer.
-
-    Coordinates between the MarketLoader and API endpoints.
+    Fetches market summary for the dashboard or prediction endpoints.
     """
+    return await fetch_market_data(ticker)
 
-    def __init__(self, market_loader: MarketLoader):
-        self._loader = market_loader
-
-    async def get_market_data(self, symbol: str) -> Dict[str, Any]:
-        """
-        Fetch market data for the given symbol.
-
-        Parameters
-        ----------
-        symbol : str — Stock ticker symbol
-
-        Returns
-        -------
-        dict ready for MarketResponse schema
-
-        Raises
-        ------
-        MarketDataUnavailable
-            If no data is available (→ HTTP 503)
-        """
-        data = await self._loader.fetch(symbol)
-
-        return {
-            "success": True,
-            "symbol": symbol.upper(),
-            "data": data,
-            "source": "yahoo_finance",
-            "cached": data.get("cached", False),
-            "timestamp": utc_now_iso(),
-        }
+async def get_market_features(ticker: str) -> List[List[float]]:
+    """
+    Fetches just the 100x143 feature tensor for the prediction service.
+    """
+    data = await fetch_market_data(ticker)
+    return data["features"]

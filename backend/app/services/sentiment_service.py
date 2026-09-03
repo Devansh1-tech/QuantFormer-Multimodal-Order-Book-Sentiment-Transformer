@@ -1,109 +1,58 @@
-"""
-===========================================================
-QuantFormer Backend — Sentiment Service
-===========================================================
-
-FinBERT sentiment analysis with human-readable explanations.
-
-Author : Team QuantFormer
-Project: Multimodal Order Book & Sentiment Transformer
-===========================================================
-"""
-
-import logging
+import torch
+import torch.nn.functional as F
 from typing import Dict, Any
 
-from app.models.model_manager import ModelManager
-from app.utils.helpers import LatencyTimer, utc_now_iso
+from backend.app.models.model_manager import model_manager
+from backend.app.core.exceptions import ModelNotReadyException
 
-logger = logging.getLogger(__name__)
-prediction_logger = logging.getLogger("quantformer.prediction")
+sentiment_classes = ["Negative", "Neutral", "Positive"]
 
-
-# ===========================================================
-# Sentiment Explanation Templates
-# ===========================================================
-
-_EXPLANATIONS = {
-    "positive": (
-        "The financial text expresses a positive outlook. "
-        "Keywords and context suggest optimistic market sentiment, "
-        "indicating potential growth or favorable conditions."
-    ),
-    "negative": (
-        "The financial text expresses a negative outlook. "
-        "Keywords and context suggest pessimistic market sentiment, "
-        "indicating potential decline or unfavorable conditions."
-    ),
-    "neutral": (
-        "The financial text expresses a neutral outlook. "
-        "The content is factual or balanced without strong "
-        "directional sentiment indicators."
-    ),
-}
-
-
-class SentimentService:
+async def analyze_sentiment(text: str) -> Dict[str, Any]:
     """
-    FinBERT sentiment analysis service.
-
-    Runs FinBERT inference via ModelManager and generates
-    human-readable explanations of the sentiment result.
+    Executes FinBERT inference on news text.
     """
-
-    def __init__(self, model_manager: ModelManager):
-        self._manager = model_manager
-
-    def analyze(self, text: str) -> Dict[str, Any]:
-        """
-        Analyze sentiment of financial text using FinBERT.
-
-        Parameters
-        ----------
-        text : str — Financial news text
-
-        Returns
-        -------
-        dict ready for SentimentResponse schema
-
-        Raises
-        ------
-        RuntimeError — if FinBERT model is not loaded
-        """
-        with LatencyTimer() as timer:
-            result = self._manager.analyze_sentiment(text)
-
-        sentiment = result["sentiment"]
-        explanation = _EXPLANATIONS.get(sentiment, "Sentiment analysis completed.")
-
-        # Add confidence context to explanation
-        confidence = result["confidence"]
-        if confidence >= 90:
-            explanation += f" The model is highly confident ({confidence}%) in this assessment."
-        elif confidence >= 70:
-            explanation += f" The model is moderately confident ({confidence}%) in this assessment."
-        else:
-            explanation += f" The model has lower confidence ({confidence}%) — the text may contain mixed signals."
-
-        # Log sentiment analysis
-        prediction_logger.info(
-            f"FinBERT Sentiment | "
-            f"Result: {sentiment} | "
-            f"Confidence: {confidence}% | "
-            f"Latency: {timer.elapsed_ms}ms | "
-            f"Text: {text[:80]}..."
-        )
-
+    if model_manager.finbert_status != "ready":
+        raise ModelNotReadyException("FinBERT")
+        
+    try:
+        inputs = model_manager.finbert_tokenizer(
+            text, 
+            return_tensors="pt", 
+            truncation=True, 
+            padding=True, 
+            max_length=128
+        ).to(model_manager.device)
+        
+        with torch.no_grad():
+            outputs = model_manager.finbert_model(**inputs, output_hidden_states=True)
+            logits = outputs.logits
+            
+            probs = F.softmax(logits, dim=1).squeeze(0)
+            confidence, pred_idx = torch.max(probs, dim=0)
+            
+            pred_class = sentiment_classes[pred_idx.item()]
+            
+            # Extract embedding from pooler output or last hidden state mean
+            if hasattr(outputs, 'hidden_states') and outputs.hidden_states:
+                # mean pooling over sequence length
+                embedding = outputs.hidden_states[-1].mean(dim=1)
+            elif hasattr(outputs, 'pooler_output') and outputs.pooler_output is not None:
+                embedding = outputs.pooler_output
+            else:
+                # fallback for basic models
+                embedding = torch.zeros((1, 768), device=model_manager.device)
+            
         return {
-            "success": True,
-            "text": text,
-            "sentiment": sentiment,
-            "confidence": confidence,
-            "scores": result["scores"],
-            "explanation": explanation,
-            "model_name": "FinBERT",
-            "latency_ms": timer.elapsed_ms,
-            "timestamp": utc_now_iso(),
-            # Internal: pass embedding for downstream services
-            "_embedding": result["embedding"],
+            "sentiment": pred_class,
+            "confidence": float(confidence.item()),
+            "probabilities": {
+                "Negative": float(probs[0].item()),
+                "Neutral": float(probs[1].item()),
+                "Positive": float(probs[2].item())
+            },
+            "embedding_dimension": embedding.shape[-1],
+            "disclaimer": "This analysis is AI-generated and should not be considered financial advice.",
+            "_embedding": embedding # internal use for fusion
         }
+    except Exception as e:
+        raise Exception(f"FinBERT Analysis failed: {e}")

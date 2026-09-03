@@ -59,11 +59,11 @@ export const SentimentAnalysisModal: React.FC<SentimentAnalysisModalProps> = ({
       const sentLabel = (res.sentiment.charAt(0).toUpperCase() + res.sentiment.slice(1).toLowerCase()) as 'Positive' | 'Negative' | 'Neutral';
       setResult({
         sentiment: sentLabel,
-        confidence: res.confidence > 1 ? res.confidence / 100 : res.confidence,
+        confidence: res.confidence / 100,
         scores: {
-          positive: res.scores.positive > 1 ? res.scores.positive / 100 : res.scores.positive,
-          neutral: res.scores.neutral > 1 ? res.scores.neutral / 100 : res.scores.neutral,
-          negative: res.scores.negative > 1 ? res.scores.negative / 100 : res.scores.negative,
+          positive: res.scores.positive / 100,
+          neutral: res.scores.neutral / 100,
+          negative: res.scores.negative / 100,
         },
         explanation: res.explanation,
         entities: [currentTicker, 'Financial News'],

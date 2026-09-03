@@ -15,10 +15,7 @@ cd QuantFormer
 ## 2. Setup & Run the Backend (Python / FastAPI)
 The backend is built with FastAPI, PyTorch, and Hugging Face Transformers.
 
-**Step 2.1: Open a terminal and navigate to the backend directory**
-```bash
-cd backend
-```
+**Step 2.1: Open a terminal in the root `QuantFormer` directory**
 
 **Step 2.2: Create a Virtual Environment (Optional but Recommended)**
 ```bash
@@ -32,13 +29,13 @@ source venv/bin/activate
 **Step 2.3: Install Backend Dependencies**
 Install all required Python packages from the backend's `requirements.txt`:
 ```bash
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 ```
 
 **Step 2.4: Start the Backend Server**
 Run the FastAPI server using Uvicorn:
 ```bash
-uvicorn app.main:app --reload --port 8000
+uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 - The backend API will be accessible at: `http://127.0.0.1:8000`
 - API Documentation (Swagger) is available at: `http://127.0.0.1:8000/docs`
