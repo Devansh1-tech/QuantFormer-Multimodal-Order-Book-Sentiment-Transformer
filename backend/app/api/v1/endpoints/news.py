@@ -1,0 +1,31 @@
+from fastapi import APIRouter
+from datetime import datetime
+from typing import Optional
+from backend.app.schemas.news import BackendNewsResponse
+from backend.app.services.news_service import get_latest_news
+
+router = APIRouter()
+
+@router.get('/', response_model=BackendNewsResponse)
+async def get_news(query: str = 'AAPL', limit: int = 10):
+    res = await get_latest_news(query, limit)
+    
+    articles = []
+    if 'articles' in res:
+        for art in res['articles']:
+            articles.append({
+                'headline': art.get('title', ''),
+                'source': art.get('source', ''),
+                'published_at': art.get('published_at', ''),
+                'url': art.get('url', ''),
+                'description': art.get('summary', '')
+            })
+            
+    return {
+        'success': True,
+        'total_articles': len(articles),
+        'articles': articles,
+        'source': res.get('provider', 'NewsAPI'),
+        'cached': True,
+        'timestamp': datetime.utcnow().isoformat()
+    }
