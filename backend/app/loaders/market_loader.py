@@ -26,13 +26,21 @@ async def fetch_market_data(ticker: str, interval: str = "5m", period: str = "1d
         
         # Get latest info for display
         latest = df.iloc[-1]
+        first_open = float(df.iloc[0]['Open'])
+        current_close = float(latest['Close'])
+        daily_change = current_close - first_open
+        daily_change_percent = (daily_change / first_open * 100) if first_open > 0 else 0.0
         
         return {
             "ticker": ticker,
-            "current_price": float(latest['Close']),
-            "volume": int(latest['Volume']),
-            "high": float(latest['High']),
-            "low": float(latest['Low']),
+            "current_price": round(current_close, 2),
+            "open": round(first_open, 2),
+            "high": round(float(df['High'].max()), 2),
+            "low": round(float(df['Low'].min()), 2),
+            "close": round(current_close, 2),
+            "volume": int(df['Volume'].sum()) if df['Volume'].sum() > 0 else int(latest['Volume']),
+            "daily_change": round(daily_change, 2),
+            "daily_change_percent": round(daily_change_percent, 2),
             "features": features.tolist(),
             "timestamp": str(latest.name)
         }

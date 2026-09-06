@@ -1,30 +1,5 @@
 import { DashboardResponse, TickerInfo, CandleData, TFTPrediction, OrderBookData, NewsItem, AIInsightData, ModelPerformanceData, SystemHealthStatus, MarketIndexTicker } from '../types';
 
-export const INITIAL_TICKER: TickerInfo = {
-  symbol: 'AAPL',
-  name: 'Apple Inc.',
-  exchange: 'NASDAQ',
-  price: 188.72,
-  change: 2.35,
-  changePercent: 1.26,
-  previousClose: 186.37,
-  open: 187.71,
-  high: 189.15,
-  low: 187.10,
-  volume: '52.34M',
-  volumeNumber: 52340000,
-  avgVolume: '48.21M',
-  volatility: 1.42,
-  volatilityChange: -0.15,
-  marketCap: '$2.89T',
-  peRatio: 31.4,
-  status: 'OPEN',
-  closesIn: '05:06:32',
-  sparkline: [186.4, 186.8, 187.1, 186.9, 187.5, 187.9, 188.3, 188.1, 188.72],
-  volumeSparkline: [32, 45, 60, 40, 55, 70, 85, 65, 52],
-  volatilitySparkline: [1.8, 1.7, 1.65, 1.55, 1.5, 1.48, 1.44, 1.42],
-};
-
 export const AVAILABLE_TICKERS = [
   { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ', price: 188.72, change: 2.35, changePercent: 1.26, icon: '🍎' },
   { symbol: 'NVDA', name: 'NVIDIA Corporation', exchange: 'NASDAQ', price: 128.60, change: 4.80, changePercent: 3.88, icon: '🟢' },
@@ -32,35 +7,94 @@ export const AVAILABLE_TICKERS = [
   { symbol: 'TSLA', name: 'Tesla, Inc.', exchange: 'NASDAQ', price: 214.50, change: -2.80, changePercent: -1.29, icon: '⚡' },
   { symbol: 'AMZN', name: 'Amazon.com Inc.', exchange: 'NASDAQ', price: 186.40, change: 1.95, changePercent: 1.06, icon: '📦' },
   { symbol: 'BTC-USD', name: 'Bitcoin USD', exchange: 'CRYPTO', price: 68420.00, change: 1420.50, changePercent: 2.12, icon: '₿' },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.', exchange: 'NASDAQ', price: 178.50, change: 1.75, changePercent: 0.99, icon: '🔍' },
+  { symbol: 'META', name: 'Meta Platforms Inc.', exchange: 'NASDAQ', price: 508.40, change: 5.20, changePercent: 1.03, icon: '♾️' },
 ];
 
-export const generateCandles = (symbol = 'AAPL', count = 80): CandleData[] => {
-  const candles: CandleData[] = [];
-  let basePrice = symbol === 'AAPL' ? 180 : symbol === 'NVDA' ? 120 : symbol === 'MSFT' ? 440 : 200;
-  
-  // Starting date around Feb 2025 up to May 20, 2025
-  const startDate = new Date('2025-02-01T09:30:00Z');
-  
+export const getTickerForSymbol = (symbol = 'AAPL'): TickerInfo => {
+  const base = AVAILABLE_TICKERS.find((t) => t.symbol.toUpperCase() === symbol.toUpperCase()) || {
+    symbol,
+    name: `${symbol} Inc.`,
+    exchange: 'NASDAQ',
+    price: 240.00,
+    change: 2.40,
+    changePercent: 1.01,
+    icon: '📊',
+  };
+
+  const p = base.price;
+  const chg = base.change;
+  const prevClose = Math.round((p - chg) * 100) / 100;
+  const open = Math.round((prevClose + chg * 0.3) * 100) / 100;
+  const high = Math.round((Math.max(p, open) + Math.abs(chg) * 0.5 + p * 0.005) * 100) / 100;
+  const low = Math.round((Math.min(p, open) - Math.abs(chg) * 0.5 - p * 0.005) * 100) / 100;
+  const volNum = p > 1000 ? 32000000 : Math.round(35000000 + Math.random() * 30000000);
+  const volStr = p > 1000 ? '32.10B' : `${(volNum / 1e6).toFixed(2)}M`;
+
+  const sparkline = [
+    prevClose,
+    Math.round((prevClose + chg * 0.15) * 100) / 100,
+    Math.round((prevClose + chg * 0.40) * 100) / 100,
+    Math.round((prevClose + chg * 0.30) * 100) / 100,
+    Math.round((prevClose + chg * 0.65) * 100) / 100,
+    Math.round((prevClose + chg * 0.80) * 100) / 100,
+    Math.round((prevClose + chg * 0.90) * 100) / 100,
+    p,
+  ];
+
+  return {
+    symbol: base.symbol,
+    name: base.name,
+    exchange: base.exchange,
+    price: p,
+    change: chg,
+    changePercent: base.changePercent,
+    previousClose: prevClose,
+    open,
+    high,
+    low,
+    volume: volStr,
+    volumeNumber: volNum,
+    avgVolume: `${((volNum * 0.92) / 1e6).toFixed(2)}M`,
+    volatility: 1.42,
+    volatilityChange: -0.15,
+    marketCap: p > 1000 ? '$1.35T' : p > 300 ? '$3.32T' : '$2.89T',
+    peRatio: p > 1000 ? 0 : 31.4,
+    status: 'OPEN',
+    closesIn: '05:06:32',
+    sparkline,
+    volumeSparkline: [32, 45, 60, 40, 55, 70, 85, 65, 52],
+    volatilitySparkline: [1.8, 1.7, 1.65, 1.55, 1.5, 1.48, 1.44, 1.42],
+  };
+};
+
+export const INITIAL_TICKER = getTickerForSymbol('AAPL');
+
+export const generateCandles = (symbol = 'AAPL', targetClose?: number, count = 80): CandleData[] => {
+  const baseTicker = AVAILABLE_TICKERS.find((t) => t.symbol.toUpperCase() === symbol.toUpperCase());
+  const finalPrice = targetClose || (baseTicker ? baseTicker.price : 200);
+
+  let currentWalk = finalPrice;
+  const tempCandles: CandleData[] = [];
+  const now = new Date('2025-05-20T16:00:00Z');
+
   for (let i = 0; i < count; i++) {
-    const d = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
-    // Skip weekends
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
     if (d.getDay() === 0 || d.getDay() === 6) continue;
-    
-    const isUptrend = i > 40;
-    const volatility = (Math.random() - 0.48) * (isUptrend ? 2.2 : 2.8);
-    const open = Math.round(basePrice * 100) / 100;
-    const change = volatility;
-    const close = Math.round((open + change) * 100) / 100;
-    const high = Math.round((Math.max(open, close) + Math.random() * 1.5) * 100) / 100;
-    const low = Math.round((Math.min(open, close) - Math.random() * 1.4) * 100) / 100;
-    const volume = Math.round(20000000 + Math.random() * 45000000);
+
+    const volatility = (Math.random() - 0.49) * Math.max(0.5, finalPrice * 0.015);
+    const close = Math.round(currentWalk * 100) / 100;
+    const open = Math.round((close - volatility) * 100) / 100;
+    const high = Math.round((Math.max(open, close) + Math.random() * Math.max(0.3, finalPrice * 0.008)) * 100) / 100;
+    const low = Math.round((Math.min(open, close) - Math.random() * Math.max(0.3, finalPrice * 0.008)) * 100) / 100;
+    const volume = Math.round(15000000 + Math.random() * 45000000);
 
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     const timeStr = `${year}-${month}-${day}`;
 
-    candles.push({
+    tempCandles.push({
       time: timeStr,
       open,
       high,
@@ -69,69 +103,83 @@ export const generateCandles = (symbol = 'AAPL', count = 80): CandleData[] => {
       volume,
     });
 
-    basePrice = close;
+    currentWalk = open;
   }
 
-  // Ensure last candle matches exactly $188.72 for AAPL
-  if (symbol === 'AAPL' && candles.length > 0) {
-    const last = candles[candles.length - 1];
-    last.open = 187.71;
-    last.high = 189.15;
-    last.low = 187.10;
-    last.close = 188.72;
-    last.volume = 52340000;
+  tempCandles.reverse();
+
+  if (tempCandles.length > 0) {
+    const last = tempCandles[tempCandles.length - 1];
+    last.close = finalPrice;
+    last.high = Math.max(last.high, finalPrice);
+    last.low = Math.min(last.low, finalPrice);
   }
 
-  return candles;
+  return tempCandles;
 };
 
-export const INITIAL_PREDICTION: TFTPrediction = {
-  symbol: 'AAPL',
-  prediction: 'BUY',
-  confidence: 82.6,
-  probabilityDistribution: {
-    down: 4.1,
-    stable: 13.3,
-    up: 82.6,
-  },
-  horizon: '24H',
-  modelVersion: 'TFT-v2.4.2-Prod',
-  lastUpdated: '10:45:12 AM',
-  featureWeights: [
-    { feature: 'Order Book Imbalance (L2)', importance: 0.34 },
-    { feature: 'FinBERT News Sentiment', importance: 0.28 },
-    { feature: 'Multi-Horizon Attention', importance: 0.21 },
-    { feature: 'Realized Volatility 24H', importance: 0.11 },
-    { feature: 'Macro Index Correlation', importance: 0.06 },
-  ],
-  expectedPriceRange: {
-    low: 187.20,
-    target: 191.45,
-    high: 193.80,
-  },
+export const generateOrderBookForPrice = (price: number, symbol: string): OrderBookData => {
+  const p = price > 0 ? price : 188.72;
+  const tickStep = p > 1000 ? 5.0 : p > 100 ? 0.02 : 0.01;
+  const spread = tickStep * 2;
+  const bids = [
+    { price: Math.round((p - tickStep * 1) * 100) / 100, size: 1400, total: 5800, depthPercent: 90 },
+    { price: Math.round((p - tickStep * 2) * 100) / 100, size: 1900, total: 4400, depthPercent: 72 },
+    { price: Math.round((p - tickStep * 3) * 100) / 100, size: 1200, total: 2500, depthPercent: 44 },
+    { price: Math.round((p - tickStep * 4) * 100) / 100, size: 850,  total: 1300, depthPercent: 22 },
+    { price: Math.round((p - tickStep * 5) * 100) / 100, size: 450,  total: 450,  depthPercent: 10 },
+  ];
+  const asks = [
+    { price: Math.round((p + tickStep * 1) * 100) / 100, size: 1300, total: 1300, depthPercent: 20 },
+    { price: Math.round((p + tickStep * 2) * 100) / 100, size: 1700, total: 3000, depthPercent: 48 },
+    { price: Math.round((p + tickStep * 3) * 100) / 100, size: 2100, total: 5100, depthPercent: 78 },
+    { price: Math.round((p + tickStep * 4) * 100) / 100, size: 1150, total: 6250, depthPercent: 92 },
+    { price: Math.round((p + tickStep * 5) * 100) / 100, size: 850,  total: 7100, depthPercent: 100 },
+  ];
+
+  return {
+    symbol,
+    bids,
+    asks,
+    spread,
+    spreadPercent: Math.round((spread / p) * 10000) / 100,
+    midPrice: p,
+    lastUpdated: new Date().toLocaleTimeString(),
+  };
 };
 
-export const INITIAL_ORDER_BOOK: OrderBookData = {
-  symbol: 'AAPL',
-  midPrice: 188.715,
-  spread: 0.03,
-  spreadPercent: 0.02,
-  lastUpdated: '10:45:32 AM',
-  bids: [
-    { price: 188.70, size: 1200, total: 5600, depthPercent: 88 },
-    { price: 188.69, size: 1800, total: 4400, depthPercent: 70 },
-    { price: 188.68, size: 1100, total: 2600, depthPercent: 42 },
-    { price: 188.67, size: 900,  total: 1500, depthPercent: 24 },
-    { price: 188.66, size: 600,  total: 600,  depthPercent: 10 },
-  ],
-  asks: [
-    { price: 188.73, size: 1300, total: 1300, depthPercent: 20 },
-    { price: 188.74, size: 1600, total: 2900, depthPercent: 45 },
-    { price: 188.75, size: 2000, total: 4900, depthPercent: 75 },
-    { price: 188.76, size: 1100, total: 6000, depthPercent: 90 },
-    { price: 188.77, size: 900,  total: 6900, depthPercent: 100 },
-  ],
+export const getPredictionForSymbol = (symbol: string, price: number): TFTPrediction => {
+  const isBull = symbol !== 'TSLA';
+  return {
+    symbol,
+    prediction: isBull ? 'BUY' : 'SELL',
+    marketTrend: isBull ? 'Bullish' : 'Bearish',
+    confidence: isBull ? 82.6 : 74.2,
+    probabilityDistribution: {
+      down: isBull ? 4.1 : 74.2,
+      stable: isBull ? 13.3 : 18.5,
+      up: isBull ? 82.6 : 7.3,
+    },
+    horizon: '24H',
+    modelVersion: 'TFT-v2.4.2-Prod',
+    lastUpdated: new Date().toLocaleTimeString(),
+    featureWeights: [
+      { feature: 'Order Book Imbalance (L2)', importance: 0.34 },
+      { feature: 'FinBERT News Sentiment', importance: 0.28 },
+      { feature: 'Multi-Horizon Attention', importance: 0.21 },
+      { feature: 'Realized Volatility 24H', importance: 0.11 },
+      { feature: 'Macro Index Correlation', importance: 0.06 },
+    ],
+    expectedPriceRange: {
+      low: Math.round((price * 0.985) * 100) / 100,
+      target: Math.round((price * 1.018) * 100) / 100,
+      high: Math.round((price * 1.032) * 100) / 100,
+    },
+  };
 };
+
+export const INITIAL_PREDICTION: TFTPrediction = getPredictionForSymbol('AAPL', 188.72);
+export const INITIAL_ORDER_BOOK: OrderBookData = generateOrderBookForPrice(188.72, 'AAPL');
 
 export const INITIAL_NEWS: NewsItem[] = [
   {
@@ -236,15 +284,29 @@ export const INITIAL_INDICES: MarketIndexTicker[] = [
 ];
 
 export const getMockDashboard = (symbol = 'AAPL'): DashboardResponse => {
+  const ticker = getTickerForSymbol(symbol);
+  const candles = generateCandles(symbol, ticker.price);
+  const orderBook = generateOrderBookForPrice(ticker.price, symbol);
+  const prediction = getPredictionForSymbol(symbol, ticker.price);
+  const news = INITIAL_NEWS.map((n, i) => ({
+    ...n,
+    id: `mock-news-${symbol}-${i}`,
+    ticker: symbol,
+  }));
+
   return {
-    ticker: { ...INITIAL_TICKER, symbol },
-    candles: generateCandles(symbol),
-    prediction: { ...INITIAL_PREDICTION, symbol },
-    orderBook: { ...INITIAL_ORDER_BOOK, symbol },
-    news: INITIAL_NEWS,
-    insight: INITIAL_INSIGHT,
+    ticker,
+    candles,
+    prediction,
+    orderBook,
+    news,
+    insight: {
+      ...INITIAL_INSIGHT,
+      summary: `Market trend for ${symbol} is ${(prediction.marketTrend || 'Bullish').toLowerCase()} with positive sentiment. Multi-horizon attention validates strong volume support.`,
+    },
     modelPerformance: INITIAL_MODEL_PERFORMANCE,
     systemHealth: INITIAL_SYSTEM_HEALTH,
     indices: INITIAL_INDICES,
+    isSimulationMode: false,
   };
 };

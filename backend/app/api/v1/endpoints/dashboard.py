@@ -54,13 +54,13 @@ async def get_dashboard(symbol: Optional[str] = None, ticker: Optional[str] = No
             'symbol': target,
             'company_name': f"{target} Inc.",
             'price': m_data['current_price'],
-            'open': m_data['current_price'] - 1.0,
-            'high': m_data['high'],
-            'low': m_data['low'],
-            'close': m_data['current_price'],
-            'volume': m_data['volume'],
-            'daily_change': 2.35,
-            'daily_change_percent': 1.26,
+            'open': m_data.get('open', m_data['current_price'] - 1.0),
+            'high': m_data.get('high', m_data['current_price'] + 1.2),
+            'low': m_data.get('low', m_data['current_price'] - 1.4),
+            'close': m_data.get('close', m_data['current_price']),
+            'volume': m_data.get('volume', 52340000),
+            'daily_change': m_data.get('daily_change', 2.35),
+            'daily_change_percent': m_data.get('daily_change_percent', 1.26),
             'timestamp': datetime.utcnow().isoformat()
         }
         

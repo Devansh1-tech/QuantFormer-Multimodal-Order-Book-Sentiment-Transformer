@@ -28,7 +28,9 @@ import {
   INITIAL_INSIGHT, 
   INITIAL_MODEL_PERFORMANCE,
   INITIAL_INDICES,
-  generateCandles
+  generateCandles,
+  getTickerForSymbol,
+  generateOrderBookForPrice
 } from './mockData';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -70,36 +72,6 @@ function formatRelativeTime(isoStr?: string): string {
   }
 }
 
-// Generates dynamic Level 2 order book around current price
-function generateOrderBookForPrice(price: number, symbol: string): OrderBookData {
-  const p = price > 0 ? price : 188.72;
-  const spread = 0.03;
-  const bids = [
-    { price: Math.round((p - 0.02) * 100) / 100, size: 1400, total: 5800, depthPercent: 90 },
-    { price: Math.round((p - 0.03) * 100) / 100, size: 1900, total: 4400, depthPercent: 72 },
-    { price: Math.round((p - 0.04) * 100) / 100, size: 1200, total: 2500, depthPercent: 44 },
-    { price: Math.round((p - 0.05) * 100) / 100, size: 850,  total: 1300, depthPercent: 22 },
-    { price: Math.round((p - 0.06) * 100) / 100, size: 450,  total: 450,  depthPercent: 10 },
-  ];
-  const asks = [
-    { price: Math.round((p + 0.01) * 100) / 100, size: 1300, total: 1300, depthPercent: 20 },
-    { price: Math.round((p + 0.02) * 100) / 100, size: 1700, total: 3000, depthPercent: 48 },
-    { price: Math.round((p + 0.03) * 100) / 100, size: 2100, total: 5100, depthPercent: 78 },
-    { price: Math.round((p + 0.04) * 100) / 100, size: 1150, total: 6250, depthPercent: 92 },
-    { price: Math.round((p + 0.05) * 100) / 100, size: 850,  total: 7100, depthPercent: 100 },
-  ];
-
-  return {
-    symbol,
-    bids,
-    asks,
-    spread,
-    spreadPercent: Math.round((spread / p) * 10000) / 100,
-    midPrice: Math.round((p - 0.005) * 1000) / 1000,
-    lastUpdated: new Date().toLocaleTimeString(),
-  };
-}
-
 export const api = {
   // 1. Primary Dashboard Data (GET /api/v1/dashboard?symbol=...)
   getDashboard: async (symbol = 'AAPL'): Promise<DashboardResponse> => {
@@ -111,16 +83,17 @@ export const api = {
 
       const raw = response.data;
       const m = raw.market;
-      const p = m ? m.price : 188.72;
-      const prevClose = m ? m.close : 186.37;
-      const chg = m ? m.daily_change : 2.35;
-      const chgPct = m ? m.daily_change_percent : 1.26;
-      const volNum = m ? m.volume : 52340000;
+      const baseTicker = getTickerForSymbol(symbol);
+      const p = m ? m.price : baseTicker.price;
+      const prevClose = m ? m.close : baseTicker.previousClose;
+      const chg = m ? m.daily_change : baseTicker.change;
+      const chgPct = m ? m.daily_change_percent : baseTicker.changePercent;
+      const volNum = m ? m.volume : baseTicker.volumeNumber;
 
       // Transform into TickerInfo
       const ticker: TickerInfo = {
         symbol: raw.symbol || symbol,
-        name: m ? m.company_name : `${symbol} Inc.`,
+        name: m ? m.company_name : baseTicker.name,
         exchange: 'NASDAQ',
         price: p,
         change: chg,
@@ -134,8 +107,8 @@ export const api = {
         avgVolume: formatVolume(Math.round(volNum * 0.92)),
         volatility: 1.42,
         volatilityChange: -0.15,
-        marketCap: '$2.89T',
-        peRatio: 31.4,
+        marketCap: baseTicker.marketCap,
+        peRatio: baseTicker.peRatio,
         status: 'OPEN',
         closesIn: '05:06:32',
         sparkline: [
@@ -153,7 +126,7 @@ export const api = {
       };
 
       // Generate candles aligned with current price
-      const candles: CandleData[] = generateCandles(symbol);
+      const candles: CandleData[] = generateCandles(symbol, p);
       if (candles.length > 0) {
         const lastCandle = candles[candles.length - 1];
         lastCandle.open = ticker.open;
