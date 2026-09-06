@@ -292,6 +292,13 @@ export const api = {
     return response.data;
   },
 
+  getLiveNews: async (limit = 6, query = 'AAPL'): Promise<any> => {
+    const response = await client.get(`/api/v1/news/live`, {
+      params: { limit, query },
+    });
+    return response.data;
+  },
+
   // 4. Temporal Fusion Transformer Prediction (POST /api/v1/predict)
   postPredict: async (payload: { features?: number[][]; symbol?: string }): Promise<BackendPredictResponse> => {
     // If features are not provided, generate a standard (100, 143) synthetic tensor

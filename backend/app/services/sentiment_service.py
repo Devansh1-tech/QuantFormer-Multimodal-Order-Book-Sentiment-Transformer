@@ -5,7 +5,7 @@ from typing import Dict, Any
 from backend.app.models.model_manager import model_manager
 from backend.app.core.exceptions import ModelNotReadyException
 
-sentiment_classes = ["Negative", "Neutral", "Positive"]
+sentiment_classes = ["Positive", "Negative", "Neutral"]
 
 async def analyze_sentiment(text: str) -> Dict[str, Any]:
     """
@@ -46,9 +46,9 @@ async def analyze_sentiment(text: str) -> Dict[str, Any]:
             "sentiment": pred_class,
             "confidence": float(confidence.item()),
             "probabilities": {
-                "Negative": float(probs[0].item()),
-                "Neutral": float(probs[1].item()),
-                "Positive": float(probs[2].item())
+                "Positive": float(probs[0].item()),
+                "Negative": float(probs[1].item()),
+                "Neutral": float(probs[2].item())
             },
             "embedding_dimension": embedding.shape[-1],
             "disclaimer": "This analysis is AI-generated and should not be considered financial advice.",

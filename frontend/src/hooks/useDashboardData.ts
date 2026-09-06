@@ -73,6 +73,44 @@ export function useDashboardData(symbol = 'AAPL') {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch live news stream every 3.5s
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const liveNews = await api.getLiveNews(3, symbol);
+        if (liveNews?.success && liveNews.articles) {
+          const newNewsItems = liveNews.articles.map((art: any, idx: number) => ({
+            id: art.url || `live-news-${Date.now()}-${idx}`,
+            headline: art.headline,
+            publisher: art.source || 'FinancialPhraseBank',
+            publishedAt: art.published_at ? 'Just now' : 'Just now',
+            ticker: symbol,
+            sentiment: art.sentiment,
+            confidence: art.confidence,
+            summary: art.description,
+            url: art.url,
+            finbertScores: art.finbert_scores,
+          }));
+          
+          setLiveData((prev) => {
+             if (!prev) return prev;
+             // Prepend new news and keep top 10
+             const mergedNews = [...newNewsItems, ...prev.news].slice(0, 10);
+             return { ...prev, news: mergedNews };
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to fetch live news stream', err);
+      }
+    };
+    
+    // Call immediately on mount/symbol change
+    fetchNews();
+    
+    const interval = setInterval(fetchNews, 3500);
+    return () => clearInterval(interval);
+  }, [symbol]);
+
   return {
     data: liveData || query.data,
     isLoading: query.isLoading && !liveData,
