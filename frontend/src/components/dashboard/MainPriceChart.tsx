@@ -34,13 +34,19 @@ export const MainPriceChart: React.FC<MainPriceChartProps> = ({
     '1D', '5D', '1M', '3M', '6M', '1Y', 'All'
   ];
 
-  // Active display OHLC values (either hovered candle or latest ticker)
-  const currentO = hoveredCandle ? hoveredCandle.open : ticker.open;
-  const currentH = hoveredCandle ? hoveredCandle.high : ticker.high;
-  const currentL = hoveredCandle ? hoveredCandle.low : ticker.low;
-  const currentC = hoveredCandle ? hoveredCandle.close : ticker.price;
-  const currentChg = currentC - (hoveredCandle ? hoveredCandle.open : ticker.previousClose);
-  const currentChgPct = ((currentChg / (hoveredCandle ? hoveredCandle.open : ticker.previousClose)) * 100);
+  // Active display OHLC values (either hovered candle or active live candle)
+  const lastCandle = candles.length > 0 ? candles[candles.length - 1] : null;
+  const activeCandle = hoveredCandle || lastCandle;
+  const currentO = activeCandle ? activeCandle.open : ticker.open;
+  const currentH = activeCandle ? activeCandle.high : ticker.high;
+  const currentL = activeCandle ? activeCandle.low : ticker.low;
+  const currentC = activeCandle ? activeCandle.close : ticker.price;
+  const currentChg = hoveredCandle 
+    ? (hoveredCandle.close - hoveredCandle.open)
+    : ticker.change;
+  const currentChgPct = hoveredCandle 
+    ? ((hoveredCandle.close - hoveredCandle.open) / (hoveredCandle.open || 1)) * 100
+    : ticker.changePercent;
 
   // Render high-precision Candlesticks & Volume onto HTML5 Canvas
   useEffect(() => {
@@ -178,9 +184,13 @@ export const MainPriceChart: React.FC<MainPriceChartProps> = ({
       ctx.stroke();
     }
 
-    // Horizontal Current Price dashed line & Right badge ($188.72)
-    const currentY = getY(ticker.price);
-    ctx.strokeStyle = '#10b981';
+    // Horizontal Current Price dashed line & Right badge
+    const activePrice = candles.length > 0 ? candles[candles.length - 1].close : ticker.price;
+    const currentY = getY(activePrice);
+    const isPriceUp = ticker.change >= 0;
+    const priceColor = isPriceUp ? '#10b981' : '#ef4444';
+
+    ctx.strokeStyle = priceColor;
     ctx.lineWidth = 1.5;
     ctx.setLineDash([3, 3]);
     ctx.beginPath();
@@ -190,17 +200,24 @@ export const MainPriceChart: React.FC<MainPriceChartProps> = ({
     ctx.setLineDash([]);
 
     // Price badge on the right axis
-    ctx.fillStyle = '#10b981';
-    const badgeW = 56;
+    ctx.fillStyle = priceColor;
+    const badgeW = Math.max(56, activePrice > 1000 ? 74 : 58);
     const badgeH = 18;
     ctx.beginPath();
     ctx.roundRect(chartWidth + 6, currentY - badgeH / 2, badgeW, badgeH, 4);
     ctx.fill();
 
     ctx.fillStyle = '#080c14';
-    ctx.font = 'bold 10.5px JetBrains Mono, monospace';
+    ctx.font = 'bold 10px JetBrains Mono, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(ticker.price.toFixed(2), chartWidth + 6 + badgeW / 2, currentY + 1);
+    ctx.fillText(activePrice.toFixed(2), chartWidth + 6 + badgeW / 2, currentY + 1);
+
+    // Active candle tip dot
+    const lastX = chartWidth - candleSlotWidth / 2;
+    ctx.fillStyle = priceColor;
+    ctx.beginPath();
+    ctx.arc(lastX, currentY, 3, 0, Math.PI * 2);
+    ctx.fill();
 
     // Month & Day X-axis Labels (Feb, Mar, Apr, May, 20)
     ctx.font = '11px sans-serif';
@@ -217,7 +234,7 @@ export const MainPriceChart: React.FC<MainPriceChartProps> = ({
       ctx.fillText(lbl.label, chartWidth * lbl.pos, height - 8);
     });
 
-  }, [candles, ticker.price, activeIndicators]);
+  }, [candles, ticker.price, ticker.change, activeIndicators]);
 
   // Handle mouse move for crosshairs
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -342,26 +359,33 @@ export const MainPriceChart: React.FC<MainPriceChartProps> = ({
         </div>
       </div>
 
-      {/* OHLC Bar (matching screenshot: O 187.71  H 189.15  L 187.10  C 188.72  +2.35 (+1.26%)) */}
-      <div className="flex items-center gap-4 py-2 text-xs font-mono">
-        <div className="flex items-center gap-1.5">
-          <span className="text-slate-400">O</span>
-          <span className="text-emerald-400 font-semibold">{currentO.toFixed(2)}</span>
+      {/* OHLC Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 py-2 text-xs font-mono">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-400">O</span>
+            <span className="text-emerald-400 font-semibold">{currentO.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-400">H</span>
+            <span className="text-emerald-400 font-semibold">{currentH.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-400">L</span>
+            <span className="text-emerald-400 font-semibold">{currentL.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-400">C</span>
+            <span className="text-emerald-400 font-semibold">{currentC.toFixed(2)}</span>
+          </div>
+          <div className={`font-semibold ${currentChg >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {currentChg >= 0 ? '+' : ''}{currentChg.toFixed(2)} ({currentChg >= 0 ? '+' : ''}{currentChgPct.toFixed(2)}%)
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-slate-400">H</span>
-          <span className="text-emerald-400 font-semibold">{currentH.toFixed(2)}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-slate-400">L</span>
-          <span className="text-emerald-400 font-semibold">{currentL.toFixed(2)}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-slate-400">C</span>
-          <span className="text-emerald-400 font-semibold">{currentC.toFixed(2)}</span>
-        </div>
-        <div className={`font-semibold ${currentChg >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-          {currentChg >= 0 ? '+' : ''}{currentChg.toFixed(2)} ({currentChg >= 0 ? '+' : ''}{currentChgPct.toFixed(2)}%)
+
+        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[10px] text-emerald-400 font-sans font-semibold">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span>LIVE TICK 1.2s</span>
         </div>
       </div>
 
