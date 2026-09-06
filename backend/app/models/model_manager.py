@@ -65,8 +65,11 @@ class ModelManager:
             logger.info("Loading FinBERT model...")
             self.finbert_tokenizer = AutoTokenizer.from_pretrained("ProsusAI/finbert")
             self.finbert_model = AutoModelForSequenceClassification.from_pretrained("ProsusAI/finbert", num_labels=3)
-            checkpoint = torch.load(settings.FINBERT_MODEL_PATH, map_location=self.device)
-            self.finbert_model.load_state_dict(checkpoint, strict=False)
+            # Note: We use the pretrained ProsusAI/finbert weights directly.
+            # The custom checkpoint (best_finbert_model.pth) was fine-tuned on
+            # FinancialPhraseBank but developed a strong Neutral bias, making it
+            # classify nearly all informal/general text as Neutral. The pretrained
+            # model provides well-calibrated sentiment across all three classes.
             self.finbert_model.to(self.device)
             self.finbert_model.eval()
             self.finbert_status = "ready"

@@ -51,10 +51,16 @@ export const NewsSentimentCard: React.FC<NewsSentimentCardProps> = ({
 
   return (
     <div className="p-5 rounded-2xl bg-[#0c1322]/85 backdrop-blur-md border border-[#18233c] shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex flex-col justify-between">
-      {/* Header with View All Button */}
+      {/* Header with View All Button and Live Indicator */}
       <div className="flex items-center justify-between pb-3 border-b border-[#162035]">
-        <div className="text-base font-bold text-white tracking-wide">
-          Market News & Sentiment
+        <div className="flex items-center gap-3">
+          <div className="text-base font-bold text-white tracking-wide">
+            Market News & Sentiment
+          </div>
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-500/30">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+            <span className="text-[10px] font-bold text-emerald-400 tracking-wider">LIVE 3s</span>
+          </div>
         </div>
 
         <button
@@ -75,7 +81,7 @@ export const NewsSentimentCard: React.FC<NewsSentimentCardProps> = ({
             <div
               key={item.id}
               onClick={() => onSelectNews(item)}
-              className="py-3 px-1 flex items-center justify-between gap-4 hover:bg-slate-800/20 rounded-xl transition-all cursor-pointer group"
+              className="py-3 px-1 flex items-center justify-between gap-4 hover:bg-slate-800/20 rounded-xl transition-all cursor-pointer group animate-in slide-in-from-top-4 fade-in duration-500"
             >
               {/* Left: Publisher Icon + Headline + Timestamp */}
               <div className="flex items-center gap-3 min-w-0">
